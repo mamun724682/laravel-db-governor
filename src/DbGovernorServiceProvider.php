@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Route;
 use Mamun724682\DbGovernor\Http\Middleware\DbGovernanceAccess;
 use Mamun724682\DbGovernor\Services\AccessGuard;
 use Mamun724682\DbGovernor\Services\ConnectionManager;
+use Mamun724682\DbGovernor\Services\DryRunEngine;
+use Mamun724682\DbGovernor\Services\RiskAnalyzer;
 
 class DbGovernorServiceProvider extends ServiceProvider
 {
@@ -16,6 +18,15 @@ class DbGovernorServiceProvider extends ServiceProvider
 
         $this->app->singleton(AccessGuard::class);
         $this->app->singleton(ConnectionManager::class);
+
+        $this->app->bind(RiskAnalyzer::class, function ($app) {
+            return new RiskAnalyzer(
+                blockedPatterns: config('db-governor.blocked_patterns', []),
+                flaggedPatterns: config('db-governor.flagged_patterns', []),
+                maxAffectedRows: (int) config('db-governor.max_affected_rows', 1000),
+                dryRun: $app->make(DryRunEngine::class),
+            );
+        });
     }
 
     public function boot(): void
