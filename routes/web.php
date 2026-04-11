@@ -22,6 +22,10 @@ Route::prefix($prefix)
 
         // Auth-protected routes
         Route::middleware('db-governor.auth')->group(function () {
+            // Logout
+            Route::post('/{token}/logout', [AuthController::class, 'logout'])
+                ->name('db-governor.logout');
+
             // Connection picker
             Route::get('/{token}', [ConnectionController::class, 'pick'])
                 ->name('db-governor.connections.pick');

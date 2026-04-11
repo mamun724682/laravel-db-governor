@@ -41,12 +41,24 @@
     </div>
 
     <div class="pt-4 border-t border-gray-200 mt-4">
-        <a
-            href="{{ route('db-governor.login') }}"
-            class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition w-full"
-        >
-            🚪 Logout
-        </a>
+        @if ($token)
+            <form method="POST" action="{{ route('db-governor.logout', ['token' => $token]) }}">
+                @csrf
+                <button
+                    type="submit"
+                    class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition w-full"
+                >
+                    🚪 Logout
+                </button>
+            </form>
+        @else
+            <a
+                href="{{ route('db-governor.login') }}"
+                class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition w-full"
+            >
+                🚪 Logout
+            </a>
+        @endif
     </div>
 </nav>
 

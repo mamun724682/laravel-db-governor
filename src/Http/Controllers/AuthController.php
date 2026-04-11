@@ -29,5 +29,14 @@ class AuthController
 
         return redirect()->route('db-governor.connections.pick', ['token' => $token]);
     }
+
+    public function logout(Request $request): RedirectResponse
+    {
+        $token = (string) $request->route('token');
+        $this->guard->revokeToken($token);
+
+        return redirect()->route('db-governor.login')
+            ->with('success', 'You have been logged out.');
+    }
 }
 

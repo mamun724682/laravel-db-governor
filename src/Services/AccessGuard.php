@@ -2,11 +2,14 @@
 
 namespace Mamun724682\DbGovernor\Services;
 
-use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Str;
 
 class AccessGuard
 {
+    private const CACHE_PREFIX = 'dbg_token_';
+
     /** @var array<string, mixed>|null */
     private ?array $payload = null;
 
@@ -30,28 +33,14 @@ class AccessGuard
      */
     public function validateToken(string $token): array
     {
-        // Support both URL-safe base64 (from login()) and standard base64 (from direct Crypt calls).
-        $base64 = rtrim(strtr($token, '-_', '+/'), '=');
-        $padded = $base64.str_repeat('=', (4 - strlen($base64) % 4) % 4);
-
-        try {
-            $raw = Crypt::decryptString($padded);
-        } catch (\Throwable $e) {
-            // Fall back to the original token string for standard base64 tokens
-            try {
-                $raw = Crypt::decryptString($token);
-            } catch (\Throwable $e2) {
-                throw new \RuntimeException('Invalid token: decryption failed.', previous: $e2);
-            }
-        }
-
-        $data = json_decode($raw, true);
+        $data = Cache::get(self::CACHE_PREFIX.$token);
 
         if (! is_array($data) || ! isset($data['email'], $data['role'], $data['expires_at'])) {
-            throw new \RuntimeException('Invalid token: malformed payload.');
+            throw new \RuntimeException('Invalid or expired token.');
         }
 
         if (Date::parse($data['expires_at'])->isPast()) {
+            Cache::forget(self::CACHE_PREFIX.$token);
             throw new \RuntimeException('Token expired.');
         }
 
@@ -100,18 +89,24 @@ class AccessGuard
         }
     }
 
+    public function revokeToken(string $token): void
+    {
+        Cache::forget(self::CACHE_PREFIX.$token);
+    }
+
     private function issueToken(string $email, string $role): string
     {
         $expiryHours = (int) config('db-governor.token_expiry_hours', 8);
+        $expiresAt   = now()->addHours($expiryHours);
+        $token       = Str::random(32);
 
-        $payload = json_encode([
+        Cache::put(self::CACHE_PREFIX.$token, [
             'email'      => $email,
             'role'       => $role,
-            'expires_at' => now()->addHours($expiryHours)->toISOString(),
-        ]);
+            'expires_at' => $expiresAt->toISOString(),
+        ], $expiresAt);
 
-        // Convert to URL-safe base64 (replace +→- /→_ and strip = padding)
-        return rtrim(strtr(Crypt::encryptString($payload), '+/', '-_'), '=');
+        return $token;
     }
 
     /**
