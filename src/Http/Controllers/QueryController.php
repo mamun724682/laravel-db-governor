@@ -21,7 +21,7 @@ class QueryController
     public function index(Request $request, string $token, string $connection): View
     {
         $queries           = GovernedQuery::where('connection', $connection)->latest()->paginate(20);
-        $tables            = $this->connectionManager->inspector($connection)->listTables($this->connectionManager->resolve($connection));
+        $tables            = $this->connectionManager->listTables($connection);
         $currentConnection = $connection;
 
         return view('db-governor::queries', compact('queries', 'tables', 'token', 'currentConnection'));

@@ -62,5 +62,21 @@ class ConnectionManager
             ),
         };
     }
+
+    /**
+     * List tables for a connection, excluding any configured in hidden_tables.
+     *
+     * @return array<int, string>
+     */
+    public function listTables(string $key): array
+    {
+        $tables = $this->inspector($key)->listTables($this->resolve($key));
+        $hidden = config('db-governor.hidden_tables', []);
+
+        return array_values(array_filter(
+            $tables,
+            fn (string $table) => ! in_array($table, $hidden, strict: true)
+        ));
+    }
 }
 

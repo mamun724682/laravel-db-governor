@@ -12,13 +12,19 @@ class TableController
 
     public function show(Request $request, string $token, string $connection, string $table): View
     {
+        $hidden = config('db-governor.hidden_tables', []);
+
+        if (in_array($table, $hidden, strict: true)) {
+            abort(404);
+        }
+
         $conn      = $this->connectionManager->resolve($connection);
         $inspector = $this->connectionManager->inspector($connection);
         $columns   = $inspector->listColumns($table, $conn);
         $quoted    = $inspector->quoteIdentifier($table);
         $rows      = $conn->select("SELECT * FROM {$quoted} LIMIT 100");
         $rows      = array_map(fn ($r) => (array) $r, $rows);
-        $tables    = $inspector->listTables($conn);
+        $tables    = $this->connectionManager->listTables($connection);
 
         $currentConnection = $connection;
 

@@ -23,7 +23,7 @@ class DashboardController
             'blocked'     => GovernedQuery::where('connection', $connection)->where('status', QueryStatus::Blocked->value)->count(),
         ];
 
-        $tables            = $this->connectionManager->inspector($connection)->listTables($this->connectionManager->resolve($connection));
+        $tables            = $this->connectionManager->listTables($connection);
         $currentConnection = $connection;
 
         return view('db-governor::dashboard', compact('stats', 'tables', 'token', 'currentConnection'));

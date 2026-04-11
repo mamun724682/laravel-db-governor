@@ -48,5 +48,25 @@ return [
 
     // Separate connection for the governance table itself (null = app default).
     'governance_connection' => env('DB_GOVERNOR_STORAGE_CONNECTION', null),
+
+    // Tables to hide from the sidebar and dashboard table list.
+    // Add any internal/framework tables you don't want exposed in the UI.
+    'hidden_tables' => [
+        'dbg_queries',
+        'migrations',
+        'cache',
+        'cache_locks',
+        'sessions',
+        'jobs',
+        'job_batches',
+        'failed_jobs',
+        'password_reset_tokens',
+        'pulse_aggregates',
+        'pulse_entries',
+        'pulse_values',
+        'telescope_entries',
+        'telescope_entries_tags',
+        'telescope_monitoring',
+    ],
 ];
 
