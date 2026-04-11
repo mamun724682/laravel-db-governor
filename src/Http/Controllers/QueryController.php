@@ -9,17 +9,22 @@ use Mamun724682\DbGovernor\DTOs\PendingQuery;
 use Mamun724682\DbGovernor\Exceptions\QueryBlockedException;
 use Mamun724682\DbGovernor\Models\GovernedQuery;
 use Mamun724682\DbGovernor\Services\ApprovalService;
+use Mamun724682\DbGovernor\Services\ConnectionManager;
 
 class QueryController
 {
-    public function __construct(private readonly ApprovalService $approvalService) {}
+    public function __construct(
+        private readonly ApprovalService $approvalService,
+        private readonly ConnectionManager $connectionManager,
+    ) {}
 
     public function index(Request $request, string $token, string $connection): View
     {
         $queries           = GovernedQuery::where('connection', $connection)->latest()->paginate(20);
+        $tables            = $this->connectionManager->inspector($connection)->listTables($this->connectionManager->resolve($connection));
         $currentConnection = $connection;
 
-        return view('db-governor::queries', compact('queries', 'token', 'currentConnection'));
+        return view('db-governor::queries', compact('queries', 'tables', 'token', 'currentConnection'));
     }
 
     public function store(Request $request, string $token, string $connection): RedirectResponse
