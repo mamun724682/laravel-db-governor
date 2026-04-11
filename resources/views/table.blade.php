@@ -14,7 +14,7 @@
 
     {{-- Data table --}}
     <div class="rounded-2xl bg-white shadow border border-gray-100 overflow-x-auto">
-        @if (empty($rows))
+        @if ($paginator->isEmpty())
             <div class="px-6 py-10 text-center text-sm text-gray-400">No rows found.</div>
         @else
             <table class="min-w-full text-sm text-left">
@@ -40,7 +40,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                    @foreach ($rows as $row)
+                    @foreach ($paginator as $row)
                         <tr class="hover:bg-gray-50">
                             @foreach ($row as $cell)
                                 <td class="px-4 py-2 text-xs text-gray-700 max-w-xs truncate">
@@ -52,8 +52,13 @@
                 </tbody>
             </table>
 
-            <div class="px-4 py-2 border-t border-gray-100 text-xs text-gray-400">
-                Showing {{ count($rows) }} row(s)
+            <div class="px-4 py-3 border-t border-gray-100 flex items-center justify-between gap-4 flex-wrap">
+                <span class="text-xs text-gray-400">
+                    Page {{ $paginator->currentPage() }} &middot; {{ $paginator->count() }} row(s)
+                </span>
+                <div class="text-xs">
+                    {{ $paginator->links() }}
+                </div>
             </div>
         @endif
     </div>
