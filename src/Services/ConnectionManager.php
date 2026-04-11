@@ -78,5 +78,21 @@ class ConnectionManager
             fn (string $table) => ! in_array($table, $hidden, strict: true)
         ));
     }
+
+    /**
+     * Return the first hidden table name referenced in the SQL, or null if none.
+     */
+    public function firstHiddenTableIn(string $sql): ?string
+    {
+        $hidden = config('db-governor.hidden_tables', []);
+
+        foreach ($hidden as $table) {
+            if (preg_match('/\b'.preg_quote($table, '/').'\\b/i', $sql)) {
+                return $table;
+            }
+        }
+
+        return null;
+    }
 }
 

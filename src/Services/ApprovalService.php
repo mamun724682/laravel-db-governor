@@ -15,10 +15,15 @@ class ApprovalService
         private readonly QueryExecutor $executor,
         private readonly RollbackService $rollbackService,
         private readonly AccessGuard $guard,
+        private readonly ConnectionManager $connectionManager,
     ) {}
 
     public function submit(PendingQuery $dto): GovernedQuery
     {
+        if ($hiddenTable = $this->connectionManager->firstHiddenTableIn($dto->sql)) {
+            throw new QueryBlockedException(["Access to table \"{$hiddenTable}\" is restricted."]);
+        }
+
         $type = $this->classifier->classify($dto->sql);
         $risk = $this->analyzer->analyze($dto->sql, $dto->connection);
 
@@ -76,6 +81,10 @@ class ApprovalService
     {
         $this->guard->assertAdmin();
         $query = GovernedQuery::findOrFail($uuid);
+
+        if ($hiddenTable = $this->connectionManager->firstHiddenTableIn($query->sql_raw)) {
+            throw new QueryBlockedException(["Access to table \"{$hiddenTable}\" is restricted."]);
+        }
 
         return $this->executor->executeWrite($query);
     }

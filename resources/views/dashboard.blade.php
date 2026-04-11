@@ -44,6 +44,8 @@
                     } else if (data.type === 'write') {
                         this.pendingWrite = data;
                         this.writeModal   = true;
+                    } else if (data.error) {
+                        this.error = data.error;
                     } else {
                         this.result = data;
                     }
