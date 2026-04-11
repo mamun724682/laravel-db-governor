@@ -2,7 +2,8 @@
 
 namespace Mamun724682\DbGovernor\Services;
 
-use Mamun724682\DbGovernor\DTOs\{RollbackResult, SnapshotData};
+use Mamun724682\DbGovernor\DTOs\RollbackResult;
+use Mamun724682\DbGovernor\DTOs\SnapshotData;
 use Mamun724682\DbGovernor\Enums\QueryStatus;
 use Mamun724682\DbGovernor\Models\GovernedQuery;
 
@@ -38,18 +39,19 @@ class RollbackService
         $table = $tables[0];
 
         try {
-            $conn       = $this->connectionManager->resolve($connectionKey);
-            $inspector  = $this->connectionManager->inspector($connectionKey);
+            $conn = $this->connectionManager->resolve($connectionKey);
+            $inspector = $this->connectionManager->inspector($connectionKey);
             $primaryKey = $inspector->detectPrimaryKey($table, $conn);
-            $maxRows    = (int) config('db-governor.snapshot_max_rows', 500);
+            $maxRows = (int) config('db-governor.snapshot_max_rows', 500);
 
-            // Extract WHERE clause
-            if (! preg_match('/\bWHERE\b(.+)$/is', $sql, $m)) {
+            // Extract WHERE clause (exclude any trailing LIMIT/ORDER BY/etc.)
+            if (! preg_match('/\bWHERE\b(.+?)(?:\b(?:ORDER\s+BY|LIMIT|GROUP\s+BY|HAVING)\b|$)/is', $sql, $m)) {
                 return null;
             }
 
             $where = trim($m[1]);
-            $rows  = $conn->select("SELECT * FROM \"{$table}\" WHERE {$where}");
+            $q = $conn->getDriverName() === 'mysql' ? '`' : '"';
+            $rows = $conn->select("SELECT * FROM {$q}{$table}{$q} WHERE {$where}");
 
             if (empty($rows) || count($rows) > $maxRows) {
                 return null;
@@ -77,24 +79,25 @@ class RollbackService
         }
 
         try {
-            $rows  = json_decode($query->snapshot_data, true) ?? [];
-            $conn  = $this->connectionManager->resolve($query->connection);
+            $rows = json_decode($query->snapshot_data, true) ?? [];
+            $conn = $this->connectionManager->resolve($query->connection);
             $table = $query->snapshot_table;
-            $pk    = $query->snapshot_primary_key ?? 'id';
+            $pk = $query->snapshot_primary_key ?? 'id';
+            $q = $conn->getDriverName() === 'mysql' ? '`' : '"';
             $count = 0;
 
-            $conn->transaction(function () use ($conn, $table, $pk, $rows, &$count) {
+            $conn->transaction(function () use ($conn, $table, $pk, $rows, $q, &$count) {
                 foreach ($rows as $row) {
-                    $pkValue    = $row[$pk];
+                    $pkValue = $row[$pk];
                     $setClauses = [];
-                    $bindings   = [];
+                    $bindings = [];
 
                     foreach ($row as $col => $value) {
                         if ($col === $pk) {
                             continue;
                         }
-                        $setClauses[] = "\"{$col}\" = ?";
-                        $bindings[]   = $value;
+                        $setClauses[] = "{$q}{$col}{$q} = ?";
+                        $bindings[] = $value;
                     }
 
                     if (empty($setClauses)) {
@@ -103,7 +106,7 @@ class RollbackService
 
                     $bindings[] = $pkValue;
                     $conn->update(
-                        "UPDATE \"{$table}\" SET ".implode(', ', $setClauses)." WHERE \"{$pk}\" = ?",
+                        "UPDATE {$q}{$table}{$q} SET ".implode(', ', $setClauses)." WHERE {$q}{$pk}{$q} = ?",
                         $bindings
                     );
                     $count++;
@@ -111,7 +114,7 @@ class RollbackService
             });
 
             $query->update([
-                'status'         => QueryStatus::RolledBack->value,
+                'status' => QueryStatus::RolledBack->value,
                 'rolled_back_by' => $this->guard->email(),
                 'rolled_back_at' => now(),
                 'rollback_error' => null,
@@ -125,4 +128,3 @@ class RollbackService
         }
     }
 }
-
