@@ -3,10 +3,14 @@
 namespace Mamun724682\DbGovernor\Services;
 
 use Mamun724682\DbGovernor\DTOs\{RollbackResult, SnapshotData};
+use Mamun724682\DbGovernor\Enums\QueryStatus;
 use Mamun724682\DbGovernor\Models\GovernedQuery;
 
 class RollbackService
 {
+    /** @var array<int, string> */
+    private const SKIP_VERBS = ['INSERT', 'CREATE', 'ALTER', 'DROP', 'TRUNCATE'];
+
     public function __construct(
         private readonly ConnectionManager $connectionManager,
         private readonly QueryClassifier $classifier,
@@ -15,14 +19,110 @@ class RollbackService
 
     public function captureBeforeState(string $sql, string $connectionKey): ?SnapshotData
     {
-        // Implemented in Task 18
-        return null;
+        $verb = strtoupper($this->classifier->extractVerb($sql));
+
+        if (in_array($verb, self::SKIP_VERBS, strict: true)) {
+            return null;
+        }
+
+        if (! preg_match('/\bWHERE\b/i', $sql)) {
+            return null;
+        }
+
+        $tables = $this->classifier->extractTables($sql);
+
+        if (empty($tables)) {
+            return null;
+        }
+
+        $table = $tables[0];
+
+        try {
+            $conn       = $this->connectionManager->resolve($connectionKey);
+            $inspector  = $this->connectionManager->inspector($connectionKey);
+            $primaryKey = $inspector->detectPrimaryKey($table, $conn);
+            $maxRows    = (int) config('db-governor.snapshot_max_rows', 500);
+
+            // Extract WHERE clause
+            if (! preg_match('/\bWHERE\b(.+)$/is', $sql, $m)) {
+                return null;
+            }
+
+            $where = trim($m[1]);
+            $rows  = $conn->select("SELECT * FROM \"{$table}\" WHERE {$where}");
+
+            if (empty($rows) || count($rows) > $maxRows) {
+                return null;
+            }
+
+            return new SnapshotData(
+                strategy: 'row_snapshot',
+                tableName: $table,
+                rows: array_map(fn ($r) => (array) $r, $rows),
+                primaryKey: $primaryKey,
+            );
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     public function rollback(GovernedQuery $query): RollbackResult
     {
-        // Implemented in Task 18
-        return new RollbackResult(success: false, message: 'Not yet implemented');
+        if (empty($query->snapshot_data)) {
+            return new RollbackResult(success: false, message: 'No snapshot data available for rollback.');
+        }
+
+        if ($query->rolled_back_at !== null) {
+            return new RollbackResult(success: false, message: 'Already rolled back.');
+        }
+
+        try {
+            $rows  = json_decode($query->snapshot_data, true) ?? [];
+            $conn  = $this->connectionManager->resolve($query->connection);
+            $table = $query->snapshot_table;
+            $pk    = $query->snapshot_primary_key ?? 'id';
+            $count = 0;
+
+            $conn->transaction(function () use ($conn, $table, $pk, $rows, &$count) {
+                foreach ($rows as $row) {
+                    $pkValue    = $row[$pk];
+                    $setClauses = [];
+                    $bindings   = [];
+
+                    foreach ($row as $col => $value) {
+                        if ($col === $pk) {
+                            continue;
+                        }
+                        $setClauses[] = "\"{$col}\" = ?";
+                        $bindings[]   = $value;
+                    }
+
+                    if (empty($setClauses)) {
+                        continue;
+                    }
+
+                    $bindings[] = $pkValue;
+                    $conn->update(
+                        "UPDATE \"{$table}\" SET ".implode(', ', $setClauses)." WHERE \"{$pk}\" = ?",
+                        $bindings
+                    );
+                    $count++;
+                }
+            });
+
+            $query->update([
+                'status'         => QueryStatus::RolledBack->value,
+                'rolled_back_by' => $this->guard->email(),
+                'rolled_back_at' => now(),
+                'rollback_error' => null,
+            ]);
+
+            return new RollbackResult(success: true, rowsRestored: $count);
+        } catch (\Throwable $e) {
+            $query->update(['rollback_error' => $e->getMessage()]);
+
+            return new RollbackResult(success: false, message: $e->getMessage());
+        }
     }
 }
 
