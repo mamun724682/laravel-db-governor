@@ -13,7 +13,37 @@
     @include('db-governor::partials.filter-builder')
 
     {{-- Data table --}}
-    <div class="rounded-2xl bg-white shadow border border-gray-100 overflow-x-auto">
+    <div
+        class="rounded-2xl bg-white shadow border border-gray-100 overflow-x-auto"
+        x-data="{
+            cell: null,
+            col: null,
+            openIfTrimmed(el) {
+                if (el.scrollWidth <= el.offsetWidth) return;
+                this.col  = el.dataset.col;
+                this.cell = el.dataset.value;
+            },
+            isJson(val) {
+                if (!val) return false;
+                const t = val.trim();
+                return t.startsWith('{') || t.startsWith('[');
+            },
+            pretty(val) {
+                try { return JSON.stringify(JSON.parse(val), null, 2); } catch(e) { return val; }
+            },
+            copy() {
+                navigator.clipboard.writeText(this.cell ?? '');
+            }
+        }"
+        x-init="$nextTick(() => {
+            $el.querySelectorAll('td[data-value]').forEach(td => {
+                if (td.scrollWidth > td.offsetWidth) {
+                    td.classList.add('cursor-pointer', 'underline', 'decoration-dotted', 'underline-offset-2', 'decoration-gray-400');
+                    td.setAttribute('title', 'Click to view full value');
+                }
+            });
+        })"
+    >
         @if ($paginator->isEmpty())
             <div class="px-6 py-10 text-center text-sm text-gray-400">No rows found.</div>
         @else
@@ -42,10 +72,16 @@
                 <tbody class="divide-y divide-gray-100">
                     @foreach ($paginator as $row)
                         <tr class="hover:bg-gray-50">
-                            @foreach ($row as $cell)
-                                <td class="px-4 py-2 text-xs text-gray-700 max-w-xs truncate">
-                                    {{ $cell ?? 'NULL' }}
-                                </td>
+                            @foreach ($row as $colName => $cell)
+                                @php $isNull = is_null($cell); @endphp
+                                <td
+                                    class="px-4 py-2 text-xs max-w-xs truncate {{ $isNull ? 'text-gray-300 italic' : 'text-gray-700 cursor-default' }}"
+                                    @if (!$isNull)
+                                        data-col="{{ $colName }}"
+                                        data-value="{{ $cell }}"
+                                        @click="openIfTrimmed($el)"
+                                    @endif
+                                >{{ $isNull ? 'NULL' : $cell }}</td>
                             @endforeach
                         </tr>
                     @endforeach
@@ -61,5 +97,44 @@
                 </div>
             </div>
         @endif
+
+        {{-- Cell detail modal --}}
+        <div
+            x-show="cell !== null"
+            x-transition.opacity
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+            @click="cell = null"
+            @keydown.escape.window="cell = null"
+            style="display:none"
+        >
+            <div class="w-full max-w-2xl mx-4 rounded-2xl bg-white shadow-xl flex flex-col max-h-[80vh]" @click.stop>
+                {{-- Header --}}
+                <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+                    <span class="text-sm font-semibold text-gray-700" x-text="col"></span>
+                    <div class="flex items-center gap-3">
+                        <button
+                            type="button"
+                            @click="copy()"
+                            class="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                        >Copy</button>
+                        <button
+                            type="button"
+                            @click="cell = null"
+                            class="text-gray-400 hover:text-gray-600 text-lg leading-none"
+                        >&times;</button>
+                    </div>
+                </div>
+
+                {{-- Body --}}
+                <div class="overflow-y-auto p-5 flex-1">
+                    <template x-if="isJson(cell)">
+                        <pre class="text-xs font-mono text-gray-800 bg-gray-50 rounded-lg border border-gray-200 p-4 overflow-x-auto whitespace-pre-wrap break-all" x-text="pretty(cell)"></pre>
+                    </template>
+                    <template x-if="!isJson(cell)">
+                        <p class="text-sm text-gray-800 whitespace-pre-wrap break-words" x-text="cell"></p>
+                    </template>
+                </div>
+            </div>
+        </div>
     </div>
 @endsection
