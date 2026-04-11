@@ -2,8 +2,9 @@
 
 namespace Mamun724682\DbGovernor;
 
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
 use Mamun724682\DbGovernor\Http\Middleware\DbGovernanceAccess;
 use Mamun724682\DbGovernor\Services\AccessGuard;
 use Mamun724682\DbGovernor\Services\ConnectionManager;
@@ -44,6 +45,17 @@ class DbGovernorServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../resources/views' => resource_path('views/vendor/db-governor'),
         ], 'db-governor-views');
+
+        View::composer('db-governor::*', function ($view) {
+            $request = request();
+            $view->with([
+                'token'             => $request->route('token'),
+                'currentConnection' => $request->route('connection'),
+                'tokenBaseUrl'      => $request->route('token')
+                    ? url(config('db-governor.path', 'db-governor').'/'.$request->route('token'))
+                    : null,
+            ]);
+        });
     }
 }
 
