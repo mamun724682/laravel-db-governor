@@ -8,6 +8,7 @@ use Illuminate\View\View;
 use Mamun724682\DbGovernor\DTOs\PendingQuery;
 use Mamun724682\DbGovernor\Exceptions\QueryBlockedException;
 use Mamun724682\DbGovernor\Models\GovernedQuery;
+use Mamun724682\DbGovernor\Services\AccessGuard;
 use Mamun724682\DbGovernor\Services\ApprovalService;
 use Mamun724682\DbGovernor\Services\ConnectionManager;
 
@@ -16,23 +17,58 @@ class QueryController
     public function __construct(
         private readonly ApprovalService $approvalService,
         private readonly ConnectionManager $connectionManager,
+        private readonly AccessGuard $guard,
     ) {}
 
     public function index(Request $request, string $token, string $connection): View
     {
-        $queries           = GovernedQuery::where('connection', $connection)->latest()->paginate(20);
-        $tables            = $this->connectionManager->listTables($connection);
-        $currentConnection = $connection;
+        $isAdmin = $this->guard->isAdmin();
 
-        return view('db-governor::queries', compact('queries', 'tables', 'token', 'currentConnection'));
+        $queryBuilder = GovernedQuery::where('connection', $connection);
+
+        if (! $isAdmin) {
+            // Employees only see their own submissions
+            $queryBuilder->where('submitted_by', $this->guard->email());
+        } elseif ($request->filled('submitted_by')) {
+            $queryBuilder->where('submitted_by', $request->input('submitted_by'));
+        }
+
+        if ($request->filled('status')) {
+            $queryBuilder->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('query_type')) {
+            $queryBuilder->where('query_type', $request->input('query_type'));
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $queryBuilder->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('sql_raw', 'like', "%{$search}%");
+            });
+        }
+
+        $queries = $queryBuilder->latest()->paginate(20);
+        $tables = $this->connectionManager->listTables($connection);
+        $currentConnection = $connection;
+        $submitters = $isAdmin
+            ? array_values(array_unique(array_map('strtolower', array_merge(
+                config('db-governor.allowed.admins', []),
+                config('db-governor.allowed.employees', []),
+            ))))
+            : [];
+
+        return view('db-governor::queries', compact('queries', 'tables', 'token', 'currentConnection', 'isAdmin', 'submitters'));
     }
 
     public function store(Request $request, string $token, string $connection): RedirectResponse
     {
         $request->validate([
-            'sql'         => ['required', 'string'],
-            'name'        => ['nullable', 'string', 'max:255'],
+            'sql' => ['required', 'string'],
+            'name' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'risk_note' => ['nullable', 'string', 'max:255'],
         ]);
 
         try {
@@ -41,6 +77,7 @@ class QueryController
                 connection: $connection,
                 name: $request->input('name'),
                 description: $request->input('description'),
+                riskNote: $request->input('risk_note'),
             ));
         } catch (QueryBlockedException $e) {
             return redirect()->back()->with('error', 'Query was blocked: '.$e->getMessage());
@@ -51,15 +88,16 @@ class QueryController
 
     public function action(Request $request, string $token, string $connection, string $query, string $action): RedirectResponse
     {
-        $note = $request->input('note', '');
+        // Accept 'note', 'review_note', or 'rejection_reason' field names
+        $note = $request->input('note') ?? $request->input('review_note') ?? $request->input('rejection_reason') ?? '';
 
         try {
             match ($action) {
-                'approve'  => $this->approvalService->approve($query, $note ?: null),
-                'reject'   => $this->approvalService->reject($query, $note),
-                'execute'  => $this->approvalService->execute($query),
+                'approve' => $this->approvalService->approve($query, $note ?: null),
+                'reject' => $this->approvalService->reject($query, $note),
+                'execute' => $this->approvalService->execute($query),
                 'rollback' => $this->approvalService->rollback($query),
-                default    => abort(404, "Unknown action: {$action}"),
+                default => abort(404, "Unknown action: {$action}"),
             };
         } catch (\Throwable $e) {
             return redirect()->back()->with('error', $e->getMessage());
@@ -68,4 +106,3 @@ class QueryController
         return redirect()->back()->with('success', "Action '{$action}' completed.");
     }
 }
-
