@@ -1,0 +1,40 @@
+{
+    "name": "mamun724682/laravel-db-governor",
+    "description": "Production-safety database governance layer for Laravel",
+    "type": "library",
+    "require": {
+        "php": "^8.4",
+        "laravel/framework": "^13"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "pestphp/pest": "^4",
+        "pestphp/pest-plugin-laravel": "^4",
+        "mockery/mockery": "^1.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "Mamun724682\\DbGovernor\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Mamun724682\\DbGovernor\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": ["Mamun724682\\DbGovernor\\DbGovernorServiceProvider"]
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
+
+
+
