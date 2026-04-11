@@ -30,10 +30,19 @@ class AccessGuard
      */
     public function validateToken(string $token): array
     {
+        // Support both URL-safe base64 (from login()) and standard base64 (from direct Crypt calls).
+        $base64 = rtrim(strtr($token, '-_', '+/'), '=');
+        $padded = $base64.str_repeat('=', (4 - strlen($base64) % 4) % 4);
+
         try {
-            $raw = Crypt::decryptString($token);
+            $raw = Crypt::decryptString($padded);
         } catch (\Throwable $e) {
-            throw new \RuntimeException('Invalid token: decryption failed.', previous: $e);
+            // Fall back to the original token string for standard base64 tokens
+            try {
+                $raw = Crypt::decryptString($token);
+            } catch (\Throwable $e2) {
+                throw new \RuntimeException('Invalid token: decryption failed.', previous: $e2);
+            }
         }
 
         $data = json_decode($raw, true);
@@ -101,7 +110,8 @@ class AccessGuard
             'expires_at' => now()->addHours($expiryHours)->toISOString(),
         ]);
 
-        return Crypt::encryptString($payload);
+        // Convert to URL-safe base64 (replace +→- /→_ and strip = padding)
+        return rtrim(strtr(Crypt::encryptString($payload), '+/', '-_'), '=');
     }
 
     /**
