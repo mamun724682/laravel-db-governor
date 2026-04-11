@@ -1,6 +1,6 @@
 <div
     x-data="{
-        groups: [{ filters: [{ col: '', op: '=', val: '' }] }],
+        groups: {{ Js::from($filterGroups) }},
         addAnd(groupIdx) {
             this.groups[groupIdx].filters.push({ col: '', op: '=', val: '' });
         },
@@ -26,7 +26,8 @@
     </div>
 
     <form method="GET" id="filter-form">
-        @foreach (request()->except(['sort', 'dir', 'page']) as $k => $v)
+        {{-- Preserve sort/dir across filter submissions --}}
+        @foreach (request()->only(['sort', 'dir']) as $k => $v)
             <input type="hidden" name="{{ $k }}" value="{{ $v }}">
         @endforeach
 

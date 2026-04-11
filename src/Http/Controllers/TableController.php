@@ -9,6 +9,8 @@ use Mamun724682\DbGovernor\Services\ConnectionManager;
 
 class TableController
 {
+    private const ALLOWED_OPS = ['=', '!=', 'LIKE', 'NOT LIKE', '>', '<', '>=', '<=', 'IS NULL', 'IS NOT NULL', 'IN'];
+
     public function __construct(private readonly ConnectionManager $connectionManager) {}
 
     public function show(Request $request, string $token, string $connection, string $table): View
@@ -36,11 +38,20 @@ class TableController
             $orderBy = 'ORDER BY '.$inspector->quoteIdentifier($sort).' '.$dir;
         }
 
+        [$where, $bindings, $filterGroups] = $this->buildWhere(
+            $request->input('f', []),
+            $columnNames,
+            $inspector
+        );
+
         // Fetch one extra row to detect a next page — no COUNT(*) needed.
         $offset = ($page - 1) * $perPage;
         $rows   = array_map(
             fn ($r) => (array) $r,
-            $conn->select("SELECT * FROM {$quoted} {$orderBy} LIMIT ".($perPage + 1)." OFFSET {$offset}")
+            $conn->select(
+                "SELECT * FROM {$quoted} {$where} {$orderBy} LIMIT ".($perPage + 1)." OFFSET {$offset}",
+                $bindings
+            )
         );
 
         // Paginator slices to $perPage and sets hasMore = count > $perPage internally.
@@ -53,7 +64,77 @@ class TableController
 
         $currentConnection = $connection;
 
-        return view('db-governor::table', compact('table', 'columns', 'paginator', 'tables', 'token', 'currentConnection'));
+        return view('db-governor::table', compact(
+            'table', 'columns', 'paginator', 'filterGroups', 'tables', 'token', 'currentConnection'
+        ));
+    }
+
+    /**
+     * Build a parameterised WHERE clause from the filter request input.
+     *
+     * @param  array<mixed>   $input
+     * @param  array<string>  $columnNames
+     * @return array{0: string, 1: array<mixed>, 2: array<mixed>}
+     */
+    private function buildWhere(array $input, array $columnNames, \Mamun724682\DbGovernor\Drivers\DbInspector $inspector): array
+    {
+        $whereParts   = [];
+        $bindings     = [];
+        $filterGroups = [];
+
+        foreach ($input as $group) {
+            if (! is_array($group)) {
+                continue;
+            }
+
+            $groupConditions = [];
+            $groupFilters    = [];
+
+            foreach ($group as $filter) {
+                $col = trim((string) ($filter['col'] ?? ''));
+                $op  = strtoupper(trim((string) ($filter['op'] ?? '=')));
+                $val = (string) ($filter['val'] ?? '');
+
+                $groupFilters[] = ['col' => $col, 'op' => $op, 'val' => $val];
+
+                if (! $col || ! in_array($col, $columnNames, strict: true)) {
+                    continue;
+                }
+
+                if (! in_array($op, self::ALLOWED_OPS, strict: true)) {
+                    continue;
+                }
+
+                $quotedCol = $inspector->quoteIdentifier($col);
+
+                if ($op === 'IS NULL' || $op === 'IS NOT NULL') {
+                    $groupConditions[] = "{$quotedCol} {$op}";
+                } elseif ($op === 'IN') {
+                    $vals         = array_filter(array_map('trim', explode(',', $val)));
+                    $placeholders = implode(',', array_fill(0, count($vals), '?'));
+                    $groupConditions[] = "{$quotedCol} IN ({$placeholders})";
+                    $bindings          = array_merge($bindings, array_values($vals));
+                } else {
+                    $groupConditions[] = "{$quotedCol} {$op} ?";
+                    $bindings[]        = $val;
+                }
+            }
+
+            if (! empty($groupFilters)) {
+                $filterGroups[] = ['filters' => $groupFilters];
+            }
+
+            if (! empty($groupConditions)) {
+                $whereParts[] = '('.implode(' AND ', $groupConditions).')';
+            }
+        }
+
+        if (empty($filterGroups)) {
+            $filterGroups = [['filters' => [['col' => '', 'op' => '=', 'val' => '']]]];
+        }
+
+        $where = ! empty($whereParts) ? 'WHERE '.implode(' OR ', $whereParts) : '';
+
+        return [$where, $bindings, $filterGroups];
     }
 }
-
