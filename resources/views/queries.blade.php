@@ -23,6 +23,19 @@
         <h1 class="text-lg font-bold text-gray-800">📋 Query Log</h1>
     </div>
 
+    {{-- Tab navigation --}}
+    <div class="flex gap-1 mb-4 border-b border-gray-200">
+        @foreach (['write' => '✏️ Write Queries', 'read' => '👁 Read Queries'] as $tabKey => $tabLabel)
+            <a
+                href="{{ request()->fullUrlWithQuery(['tab' => $tabKey]) }}"
+                class="px-4 py-2 text-sm font-medium rounded-t-lg transition
+                    {{ ($tab ?? 'write') === $tabKey
+                        ? 'border-b-2 border-indigo-600 text-indigo-700 font-semibold bg-white'
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50' }}"
+            >{{ $tabLabel }}</a>
+        @endforeach
+    </div>
+
     {{-- Filters --}}
     <form method="GET" class="flex flex-wrap items-center gap-3 mb-6 bg-white rounded-xl border border-gray-100 shadow px-4 py-3">
         <input type="hidden" name="token" value="{{ $token }}">

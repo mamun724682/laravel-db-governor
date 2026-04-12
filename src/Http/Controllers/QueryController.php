@@ -23,8 +23,16 @@ class QueryController
     public function index(Request $request, string $token, string $connection): View
     {
         $isAdmin = $this->guard->isAdmin();
+        $tab     = $request->input('tab', 'write');
 
         $queryBuilder = GovernedQuery::where('connection', $connection);
+
+        // Tab filtering: write tab shows write/ddl/unknown; read tab shows read only
+        if ($tab === 'read') {
+            $queryBuilder->where('query_type', 'read');
+        } else {
+            $queryBuilder->whereIn('query_type', ['write', 'ddl', 'unknown']);
+        }
 
         if (! $isAdmin) {
             // Employees only see their own submissions
@@ -49,17 +57,19 @@ class QueryController
             });
         }
 
-        $queries = $queryBuilder->latest()->paginate(20);
-        $tables = $this->connectionManager->listTables($connection);
+        $queries           = $queryBuilder->latest()->paginate(20);
+        $tables            = $this->connectionManager->listTables($connection);
         $currentConnection = $connection;
-        $submitters = $isAdmin
+        $submitters        = $isAdmin
             ? array_values(array_unique(array_map('strtolower', array_merge(
                 config('db-governor.allowed.admins', []),
                 config('db-governor.allowed.employees', []),
             ))))
             : [];
 
-        return view('db-governor::queries', compact('queries', 'tables', 'token', 'currentConnection', 'isAdmin', 'submitters'));
+        return view('db-governor::queries', compact(
+            'queries', 'tables', 'token', 'currentConnection', 'isAdmin', 'submitters', 'tab'
+        ));
     }
 
     public function store(Request $request, string $token, string $connection): RedirectResponse
