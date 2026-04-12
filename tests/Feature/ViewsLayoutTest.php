@@ -14,8 +14,7 @@ it('dashboard view extends layout and contains key structure', function () {
 
     $this->get(route('db-governor.dashboard', ['token' => $token, 'connection' => 'main']))
         ->assertOk()
-        ->assertSee('DB Governance')
-        ->assertSee('SQL Console');
+        ->assertSee('DB Governance');
 });
 
 it('layout contains connection switcher', function () {

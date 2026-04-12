@@ -8,15 +8,14 @@ beforeEach(function () {
     ]);
 });
 
-it('dashboard shows stats cards and SQL console', function () {
+it('dashboard shows stats cards', function () {
     $guard = app(\Mamun724682\DbGovernor\Services\AccessGuard::class);
     $token = $guard->login('admin@test.com');
 
     $this->get(route('db-governor.dashboard', ['token' => $token, 'connection' => 'main']))
         ->assertOk()
         ->assertSee('Pending')
-        ->assertSee('Executed')
-        ->assertSee('SQL Console');
+        ->assertSee('Executed');
 });
 
 it('dashboard shows all six stat labels', function () {
@@ -32,11 +31,11 @@ it('dashboard shows all six stat labels', function () {
         ->assertSee('Blocked');
 });
 
-it('write modal markup is present in dashboard', function () {
+it('write modal markup is present on queries page', function () {
     $guard = app(\Mamun724682\DbGovernor\Services\AccessGuard::class);
     $token = $guard->login('admin@test.com');
 
-    $this->get(route('db-governor.dashboard', ['token' => $token, 'connection' => 'main']))
+    $this->get(route('db-governor.queries', ['token' => $token, 'connection' => 'main']))
         ->assertOk()
         ->assertSee('writeModal', false)
         ->assertSee('Submit for Approval');

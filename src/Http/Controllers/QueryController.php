@@ -57,7 +57,24 @@ class QueryController
             });
         }
 
-        $queries           = $queryBuilder->latest()->paginate(20);
+        if ($request->filled('keyword')) {
+            $kw = $request->input('keyword');
+            $queryBuilder->where(function ($q) use ($kw) {
+                $q->where('sql_raw', 'like', "%{$kw}%")
+                    ->orWhere('name', 'like', "%{$kw}%")
+                    ->orWhere('description', 'like', "%{$kw}%");
+            });
+        }
+
+        if ($request->filled('date_from')) {
+            $queryBuilder->where('created_at', '>=', \Carbon\Carbon::parse($request->input('date_from'))->startOfDay());
+        }
+
+        if ($request->filled('date_to')) {
+            $queryBuilder->where('created_at', '<=', \Carbon\Carbon::parse($request->input('date_to'))->endOfDay());
+        }
+
+        $queries           = $queryBuilder->latest()->simplePaginate(25)->withQueryString();
         $tables            = $this->connectionManager->listTables($connection);
         $currentConnection = $connection;
         $submitters        = $isAdmin

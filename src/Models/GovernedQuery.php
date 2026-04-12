@@ -16,6 +16,8 @@ class GovernedQuery extends Model
     protected $fillable = [
         'id',
         'connection',
+        'created_at',
+        'updated_at',
         'sql_raw',
         'query_type',
         'name',

@@ -5,6 +5,7 @@ use Mamun724682\DbGovernor\Http\Controllers\AuthController;
 use Mamun724682\DbGovernor\Http\Controllers\ConnectionController;
 use Mamun724682\DbGovernor\Http\Controllers\DashboardController;
 use Mamun724682\DbGovernor\Http\Controllers\QueryController;
+use Mamun724682\DbGovernor\Http\Controllers\SchemaController;
 use Mamun724682\DbGovernor\Http\Controllers\SqlController;
 use Mamun724682\DbGovernor\Http\Controllers\TableController;
 
@@ -46,6 +47,9 @@ Route::prefix($prefix)
 
                 Route::post('/sql', [SqlController::class, 'execute'])
                     ->name('db-governor.sql.execute');
+
+                Route::get('/schema/{table}', [SchemaController::class, 'table'])
+                    ->name('db-governor.schema.table');
 
                 Route::get('/{table}', [TableController::class, 'show'])
                     ->name('db-governor.table.show');

@@ -19,8 +19,15 @@
 @endphp
 
 @section('content')
+    <div x-data="{ consoleOpen: false }">
+
     <div class="flex items-center justify-between mb-4">
         <h1 class="text-lg font-bold text-gray-800">📋 Query Log</h1>
+        <button
+            type="button"
+            @click="consoleOpen = true"
+            class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 transition"
+        >⌨ SQL Console</button>
     </div>
 
     {{-- Tab navigation --}}
@@ -57,10 +64,26 @@
 
         <input
             type="text"
-            name="search"
-            value="{{ request('search') }}"
-            placeholder="Search name or SQL…"
+            name="keyword"
+            value="{{ request('keyword', request('search')) }}"
+            placeholder="Search name, SQL or description…"
             class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-56 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        >
+
+        <input
+            type="date"
+            name="date_from"
+            value="{{ request('date_from') }}"
+            title="Date from"
+            class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        >
+
+        <input
+            type="date"
+            name="date_to"
+            value="{{ request('date_to') }}"
+            title="Date to"
+            class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         >
 
         @if ($isAdmin)
@@ -382,6 +405,252 @@
                 </template>
             </div>
         </div>
+    </div>
+
+    {{-- SQL Console Modal --}}
+    <div
+        x-show="consoleOpen"
+        x-transition
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+        @click.self="consoleOpen = false"
+        @keydown.escape.window="consoleOpen = false"
+        style="display: none;"
+        x-data="{
+            consoleTab: 'raw',
+            sql: '',
+            loading: false,
+            result: null,
+            error: null,
+            writeModal: false,
+            pendingWrite: null,
+            qbTable: '',
+            qbColumns: [],
+            qbSelectedColumns: [],
+            qbWhereCol: '',
+            qbWhereOp: '=',
+            qbWhereVal: '',
+            qbOrderBy: '',
+            qbOrderDir: 'ASC',
+            qbLimit: 100,
+            async loadColumns(tbl) {
+                this.qbColumns = [];
+                this.qbSelectedColumns = [];
+                if (!tbl) { return; }
+                try {
+                    const res = await fetch('{{ route('db-governor.schema.table', ['token' => $token, 'connection' => $currentConnection, 'table' => '__TABLE__']) }}'.replace('__TABLE__', tbl));
+                    const data = await res.json();
+                    this.qbColumns = data.columns || [];
+                } catch (e) {}
+            },
+            generateSql() {
+                const cols = this.qbSelectedColumns.length ? this.qbSelectedColumns.join(', ') : '*';
+                let q = 'SELECT ' + cols + ' FROM ' + this.qbTable;
+                if (this.qbWhereCol && this.qbWhereVal !== '') {
+                    q += ' WHERE ' + this.qbWhereCol + ' ' + this.qbWhereOp + ' \'' + this.qbWhereVal + '\'';
+                }
+                if (this.qbOrderBy) { q += ' ORDER BY ' + this.qbOrderBy + ' ' + this.qbOrderDir; }
+                if (this.qbLimit) { q += ' LIMIT ' + this.qbLimit; }
+                this.sql = q;
+                this.consoleTab = 'raw';
+            },
+            async run() {
+                this.loading = true;
+                this.result  = null;
+                this.error   = null;
+                try {
+                    const res = await fetch('{{ route('db-governor.sql.execute', ['token' => $token, 'connection' => $currentConnection]) }}', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content ?? '' },
+                        body: JSON.stringify({ sql: this.sql }),
+                    });
+                    const data = await res.json();
+                    if (data.blocked) {
+                        this.error = 'Query blocked: ' + (data.message ?? 'policy violation');
+                    } else if (data.type === 'write') {
+                        this.pendingWrite = data;
+                        this.writeModal   = true;
+                    } else if (data.error) {
+                        this.error = data.error;
+                    } else {
+                        this.result = data;
+                    }
+                } catch (e) {
+                    this.error = e.message;
+                } finally {
+                    this.loading = false;
+                }
+            }
+        }"
+        data-endpoint="db-governor.sql.execute"
+    >
+        <div class="w-full max-w-3xl rounded-2xl bg-white shadow-xl flex flex-col max-h-[90vh]" @click.stop>
+
+            {{-- Console header --}}
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+                <h3 class="text-base font-semibold text-gray-800">⌨ SQL Console</h3>
+                <button type="button" @click="consoleOpen = false" class="text-gray-400 hover:text-gray-600 text-lg leading-none">&times;</button>
+            </div>
+
+            {{-- Tab navigation --}}
+            <div class="flex gap-1 px-6 pt-4 border-b border-gray-100 flex-shrink-0">
+                <button
+                    type="button"
+                    @click="consoleTab = 'raw'"
+                    :class="consoleTab === 'raw' ? 'border-b-2 border-indigo-600 text-indigo-700 font-semibold' : 'text-gray-500 hover:text-gray-700'"
+                    class="px-4 py-2 text-sm -mb-px transition"
+                >Raw SQL</button>
+                <button
+                    type="button"
+                    @click="consoleTab = 'builder'"
+                    :class="consoleTab === 'builder' ? 'border-b-2 border-indigo-600 text-indigo-700 font-semibold' : 'text-gray-500 hover:text-gray-700'"
+                    class="px-4 py-2 text-sm -mb-px transition"
+                >Query Builder</button>
+            </div>
+
+            {{-- Scrollable body --}}
+            <div class="overflow-y-auto p-6 flex-1 space-y-4">
+
+                {{-- Raw SQL Tab --}}
+                <div x-show="consoleTab === 'raw'">
+                    <textarea
+                        x-model="sql"
+                        rows="6"
+                        placeholder="SELECT * FROM users LIMIT 10;"
+                        class="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                    ></textarea>
+
+                    <div class="flex items-center gap-3 mt-3">
+                        <button
+                            type="button"
+                            @click="run()"
+                            :disabled="loading || !sql.trim()"
+                            class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 transition"
+                        >
+                            <span x-show="!loading">▶ Run</span>
+                            <span x-show="loading">⏳ Running…</span>
+                        </button>
+                        <button type="button" @click="sql=''; result=null; error=null;" class="text-sm text-gray-400 hover:text-gray-600">Clear</button>
+                    </div>
+
+                    {{-- Error banner --}}
+                    <template x-if="error">
+                        <div class="mt-4 rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm" x-text="error"></div>
+                    </template>
+
+                    {{-- Results table --}}
+                    <template x-if="result && result.rows && result.rows.length > 0">
+                        <div class="mt-4 overflow-x-auto rounded-lg border border-gray-200">
+                            <table class="min-w-full text-xs text-left">
+                                <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider">
+                                    <tr>
+                                        <template x-for="col in Object.keys(result.rows[0])" :key="col">
+                                            <th class="px-4 py-2 font-semibold" x-text="col"></th>
+                                        </template>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="(row, i) in result.rows" :key="i">
+                                        <tr class="hover:bg-gray-50">
+                                            <template x-for="val in Object.values(row)" :key="val">
+                                                <td class="px-4 py-2 text-gray-700 truncate max-w-xs" x-text="val ?? 'NULL'"></td>
+                                            </template>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                            <p class="px-4 py-2 text-xs text-gray-400 border-t border-gray-100">
+                                <span x-text="result.rows.length"></span> row(s)
+                            </p>
+                        </div>
+                    </template>
+                </div>
+
+                {{-- Query Builder Tab --}}
+                <div x-show="consoleTab === 'builder'" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Table</label>
+                        <select
+                            x-model="qbTable"
+                            @change="loadColumns($event.target.value)"
+                            class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        >
+                            <option value="">— Select table —</option>
+                            @foreach ($tables as $tbl)
+                                <option value="{{ $tbl }}">{{ $tbl }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <template x-if="qbColumns.length > 0">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Columns (leave empty for *)</label>
+                            <div class="flex flex-wrap gap-2">
+                                <template x-for="col in qbColumns" :key="col.name">
+                                    <label class="inline-flex items-center gap-1 text-xs text-gray-700 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            :value="col.name"
+                                            x-model="qbSelectedColumns"
+                                            class="rounded border-gray-300 text-indigo-600"
+                                        >
+                                        <span x-text="col.name"></span>
+                                        <span class="text-gray-400 font-mono text-xs" x-text="col.type ? '(' + col.type + ')' : ''"></span>
+                                    </label>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">WHERE column</label>
+                            <input type="text" x-model="qbWhereCol" placeholder="e.g. id" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Operator</label>
+                            <select x-model="qbWhereOp" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                <option>=</option><option>!=</option><option>&gt;</option><option>&lt;</option><option>LIKE</option><option>IS NULL</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Value</label>
+                            <input type="text" x-model="qbWhereVal" placeholder="value" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">ORDER BY</label>
+                            <input type="text" x-model="qbOrderBy" placeholder="column" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Direction</label>
+                            <select x-model="qbOrderDir" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                <option>ASC</option><option>DESC</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">LIMIT</label>
+                            <input type="number" x-model="qbLimit" min="1" max="1000" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        @click="generateSql()"
+                        :disabled="!qbTable"
+                        class="rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 transition"
+                    >Generate SQL →</button>
+                </div>
+
+            </div>
+
+            {{-- Write modal (nested inside console) --}}
+            @include('db-governor::partials.write-modal')
+
+        </div>
+    </div>
+
     </div>
 @endsection
 
