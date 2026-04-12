@@ -84,31 +84,47 @@ class RollbackService
             $table = $query->snapshot_table;
             $pk = $query->snapshot_primary_key ?? 'id';
             $q = $conn->getDriverName() === 'mysql' ? '`' : '"';
+            $verb = strtoupper($this->classifier->extractVerb($query->sql_raw));
             $count = 0;
 
-            $conn->transaction(function () use ($conn, $table, $pk, $rows, $q, &$count) {
+            $conn->transaction(function () use ($conn, $table, $pk, $rows, $q, $verb, &$count) {
                 foreach ($rows as $row) {
-                    $pkValue = $row[$pk];
-                    $setClauses = [];
-                    $bindings = [];
+                    if ($verb === 'DELETE') {
+                        // Re-insert deleted rows
+                        $cols = array_keys($row);
+                        $colList = implode(', ', array_map(fn ($c) => "{$q}{$c}{$q}", $cols));
+                        $placeholders = implode(', ', array_fill(0, count($cols), '?'));
+                        $bindings = array_values($row);
 
-                    foreach ($row as $col => $value) {
-                        if ($col === $pk) {
+                        $conn->statement(
+                            "INSERT INTO {$q}{$table}{$q} ({$colList}) VALUES ({$placeholders})",
+                            $bindings
+                        );
+                    } else {
+                        // Restore updated rows
+                        $pkValue = $row[$pk];
+                        $setClauses = [];
+                        $bindings = [];
+
+                        foreach ($row as $col => $value) {
+                            if ($col === $pk) {
+                                continue;
+                            }
+                            $setClauses[] = "{$q}{$col}{$q} = ?";
+                            $bindings[] = $value;
+                        }
+
+                        if (empty($setClauses)) {
                             continue;
                         }
-                        $setClauses[] = "{$q}{$col}{$q} = ?";
-                        $bindings[] = $value;
+
+                        $bindings[] = $pkValue;
+                        $conn->update(
+                            "UPDATE {$q}{$table}{$q} SET ".implode(', ', $setClauses)." WHERE {$q}{$pk}{$q} = ?",
+                            $bindings
+                        );
                     }
 
-                    if (empty($setClauses)) {
-                        continue;
-                    }
-
-                    $bindings[] = $pkValue;
-                    $conn->update(
-                        "UPDATE {$q}{$table}{$q} SET ".implode(', ', $setClauses)." WHERE {$q}{$pk}{$q} = ?",
-                        $bindings
-                    );
                     $count++;
                 }
             });
