@@ -49,6 +49,9 @@ return [
     // Separate connection for the governance table itself (null = app default).
     'governance_connection' => env('DB_GOVERNOR_STORAGE_CONNECTION', null),
 
+    // Whether to log READ (SELECT) queries to the governance table for audit purposes.
+    'log_read_queries' => env('DB_GOVERNOR_LOG_READS', true),
+
     // Tables to hide from the sidebar and dashboard table list.
     // Add any internal/framework tables you don't want exposed in the UI.
     'hidden_tables' => [
