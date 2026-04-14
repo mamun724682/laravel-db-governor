@@ -623,8 +623,15 @@
                                 <tbody class="divide-y divide-gray-100">
                                     <template x-for="(row, i) in result.rows" :key="i">
                                         <tr class="hover:bg-gray-50">
-                                            <template x-for="val in Object.values(row)" :key="val">
-                                                <td class="px-4 py-2 text-gray-700 truncate max-w-xs" x-text="val ?? 'NULL'"></td>
+                                            <template x-for="(val, colIdx) in Object.values(row)" :key="colIdx">
+                                                <td class="px-4 py-2 text-gray-700 truncate max-w-xs">
+                                                    <template x-if="val === null">
+                                                        <span class="text-gray-400 italic font-mono text-xs">NULL</span>
+                                                    </template>
+                                                    <template x-if="val !== null">
+                                                        <span x-text="typeof val === 'object' ? JSON.stringify(val) : String(val)"></span>
+                                                    </template>
+                                                </td>
                                             </template>
                                         </tr>
                                     </template>
