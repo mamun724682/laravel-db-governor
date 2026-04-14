@@ -432,6 +432,59 @@
             qbOrderBy: '',
             qbOrderDir: 'ASC',
             qbLimit: 100,
+            sqlKeywords: ['SELECT','INSERT','UPDATE','DELETE','FROM','WHERE','JOIN','LEFT JOIN',
+                          'INNER JOIN','RIGHT JOIN','ORDER BY','GROUP BY','HAVING','LIMIT',
+                          'OFFSET','AND','OR','NOT','IN','LIKE','IS NULL','IS NOT NULL',
+                          'CREATE','DROP','ALTER','TRUNCATE','WITH','DISTINCT','AS','ON',
+                          'SET','INTO','VALUES','REPLACE','EXPLAIN'],
+            tableNames: @json($tables),
+            autocompleteList: [],
+            autocompleteIndex: -1,
+            get columnNames() {
+                return this.qbColumns.map(c => c.name);
+            },
+            autocomplete(value) {
+                const match = value.match(/[\w.]+$/);
+                const token = match ? match[0] : '';
+                if (!token || token.length < 1) { this.autocompleteList = []; return; }
+                const dotIdx = token.indexOf('.');
+                let candidates = [];
+                if (dotIdx > 0) {
+                    const tbl = token.slice(0, dotIdx);
+                    const col = token.slice(dotIdx + 1).toUpperCase();
+                    if (this.qbTable === tbl || this.tableNames.includes(tbl)) {
+                        candidates = this.columnNames.filter(c => c.toUpperCase().startsWith(col));
+                    }
+                } else {
+                    const up = token.toUpperCase();
+                    const kwMatches = this.sqlKeywords.filter(k => k.startsWith(up));
+                    const tblMatches = this.tableNames.filter(t => t.toUpperCase().startsWith(up));
+                    candidates = [...new Set([...kwMatches, ...tblMatches])];
+                }
+                this.autocompleteList  = candidates.filter(c => c !== token.toUpperCase() && c !== token);
+                this.autocompleteIndex = -1;
+            },
+            insertSuggestion(item) {
+                const before   = this.sql.replace(/[\w.]+$/, '');
+                this.sql       = before + item;
+                this.autocompleteList  = [];
+                this.autocompleteIndex = -1;
+            },
+            acKeydown(e) {
+                if (!this.autocompleteList.length) { return; }
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    this.autocompleteIndex = Math.min(this.autocompleteIndex + 1, this.autocompleteList.length - 1);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    this.autocompleteIndex = Math.max(this.autocompleteIndex - 1, 0);
+                } else if ((e.key === 'Tab' || e.key === 'Enter') && this.autocompleteIndex >= 0) {
+                    e.preventDefault();
+                    this.insertSuggestion(this.autocompleteList[this.autocompleteIndex]);
+                } else if (e.key === 'Escape') {
+                    this.autocompleteList = [];
+                }
+            },
             async loadColumns(tbl) {
                 this.qbColumns = [];
                 this.qbSelectedColumns = [];
@@ -512,12 +565,31 @@
 
                 {{-- Raw SQL Tab --}}
                 <div x-show="consoleTab === 'raw'">
-                    <textarea
-                        x-model="sql"
-                        rows="6"
-                        placeholder="SELECT * FROM users LIMIT 10;"
-                        class="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-                    ></textarea>
+                    <div class="relative" data-autocomplete="true">
+                        <textarea
+                            x-model="sql"
+                            rows="6"
+                            placeholder="SELECT * FROM users LIMIT 10;"
+                            class="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                            @input="autocomplete(sql)"
+                            @keydown="acKeydown($event)"
+                        ></textarea>
+                        {{-- Autocomplete dropdown --}}
+                        <ul
+                            x-show="autocompleteList.length > 0"
+                            class="absolute z-10 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto text-sm font-mono"
+                            style="display:none;"
+                        >
+                            <template x-for="(item, idx) in autocompleteList" :key="item">
+                                <li
+                                    @click="insertSuggestion(item)"
+                                    :class="idx === autocompleteIndex ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-50'"
+                                    class="px-4 py-1.5 cursor-pointer"
+                                    x-text="item"
+                                ></li>
+                            </template>
+                        </ul>
+                    </div>
 
                     <div class="flex items-center gap-3 mt-3">
                         <button
