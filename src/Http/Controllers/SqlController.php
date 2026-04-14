@@ -26,9 +26,21 @@ class SqlController
 
     public function execute(Request $request, string $token, string $connection): JsonResponse
     {
-        $request->validate(['sql' => ['required', 'string']]);
+        $request->validate(['sql' => ['required', 'string', 'not_regex:/^\s*$/']]);
 
-        $sql = $request->input('sql');
+        $sql = trim($request->input('sql'));
+
+        // Reject strings that do not start with a recognised SQL verb
+        $knownVerbs = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP',
+            'ALTER', 'TRUNCATE', 'WITH', 'REPLACE', 'EXPLAIN'];
+        $firstWord = strtoupper(strtok($sql, " \t\n\r"));
+
+        if (! in_array($firstWord, $knownVerbs, true)) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Invalid SQL: statement must begin with a recognised SQL verb (SELECT, INSERT, UPDATE, …).',
+            ]);
+        }
 
         if ($hiddenTable = $this->connectionManager->firstHiddenTableIn($sql)) {
             return response()->json([

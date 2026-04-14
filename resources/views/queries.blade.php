@@ -510,6 +510,14 @@
                 this.loading = true;
                 this.result  = null;
                 this.error   = null;
+                const knownVerbs = ['SELECT','INSERT','UPDATE','DELETE','CREATE','DROP',
+                                    'ALTER','TRUNCATE','WITH','REPLACE','EXPLAIN'];
+                const firstWord  = this.sql.trim().split(/\s+/)[0].toUpperCase();
+                if (!knownVerbs.includes(firstWord)) {
+                    this.error   = 'Invalid SQL: statement must begin with a recognised SQL verb (SELECT, INSERT, …).';
+                    this.loading = false;
+                    return;
+                }
                 try {
                     const res = await fetch('{{ route('db-governor.sql.execute', ['token' => $token, 'connection' => $currentConnection]) }}', {
                         method: 'POST',
