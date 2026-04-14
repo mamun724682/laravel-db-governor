@@ -24,18 +24,27 @@
 
             @isset($tables)
                 <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Tables</p>
-                <ul class="space-y-0.5" x-data="{ open: null }">
-                    @foreach ($tables as $table)
-                        <li>
-                            <a
-                                href="{{ route('db-governor.table.show', ['token' => $token, 'connection' => $currentConnection, 'table' => $table]) }}"
-                                class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 hover:text-indigo-600 transition truncate"
-                            >
-                                🗄 {{ $table }}
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
+                <div x-data="{ tableSearch: '' }">
+                    <input
+                        type="text"
+                        x-model="tableSearch"
+                        id="table-search"
+                        placeholder="Search tables…"
+                        class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 mb-2"
+                    >
+                    <ul class="space-y-0.5">
+                        @foreach ($tables as $table)
+                            <li x-show="!tableSearch || '{{ $table }}'.toLowerCase().includes(tableSearch.toLowerCase())">
+                                <a
+                                    href="{{ route('db-governor.table.show', ['token' => $token, 'connection' => $currentConnection, 'table' => $table]) }}"
+                                    class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 hover:text-indigo-600 transition truncate"
+                                >
+                                    🗄 {{ $table }}
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
             @endisset
         @endif
     </div>
