@@ -5,13 +5,21 @@ namespace Mamun724682\DbGovernor\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\View\View;
+use Mamun724682\DbGovernor\Enums\QueryStatus;
+use Mamun724682\DbGovernor\Enums\QueryType;
+use Mamun724682\DbGovernor\Enums\RiskLevel;
+use Mamun724682\DbGovernor\Models\GovernedQuery;
+use Mamun724682\DbGovernor\Services\AccessGuard;
 use Mamun724682\DbGovernor\Services\ConnectionManager;
 
 class TableController
 {
     private const ALLOWED_OPS = ['=', '!=', 'LIKE', 'NOT LIKE', '>', '<', '>=', '<=', 'IS NULL', 'IS NOT NULL', 'IN'];
 
-    public function __construct(private readonly ConnectionManager $connectionManager) {}
+    public function __construct(
+        private readonly ConnectionManager $connectionManager,
+        private readonly AccessGuard $guard,
+    ) {}
 
     public function show(Request $request, string $token, string $connection, string $table): View
     {
@@ -53,6 +61,21 @@ class TableController
                 $bindings
             )
         );
+
+        // Log filtered browsing as a read entry
+        if ($where !== '' && config('db-governor.log_read_queries', true)) {
+            GovernedQuery::create([
+                'connection'    => $connection,
+                'sql_raw'       => "SELECT * FROM {$quoted} {$where}",
+                'query_type'    => QueryType::Read->value,
+                'status'        => QueryStatus::Executed->value,
+                'risk_level'    => RiskLevel::Low->value,
+                'submitted_by'  => $this->guard->email(),
+                'executed_by'   => $this->guard->email(),
+                'executed_at'   => now(),
+                'rows_affected' => max(0, count($rows) - (count($rows) > $perPage ? 1 : 0)),
+            ]);
+        }
 
         // Paginator slices to $perPage and sets hasMore = count > $perPage internally.
         $paginator = new Paginator(
