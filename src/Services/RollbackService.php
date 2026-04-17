@@ -86,8 +86,9 @@ class RollbackService
             $q = $conn->getDriverName() === 'mysql' ? '`' : '"';
             $verb = strtoupper($this->classifier->extractVerb($query->sql_raw));
             $count = 0;
+            $rollbackSqlParts = [];
 
-            $conn->transaction(function () use ($conn, $table, $pk, $rows, $q, $verb, &$count) {
+            $conn->transaction(function () use ($conn, $table, $pk, $rows, $q, $verb, &$count, &$rollbackSqlParts) {
                 foreach ($rows as $row) {
                     if ($verb === 'DELETE') {
                         // Re-insert deleted rows
@@ -100,6 +101,9 @@ class RollbackService
                             "INSERT INTO {$q}{$table}{$q} ({$colList}) VALUES ({$placeholders})",
                             $bindings
                         );
+
+                        $vals = implode(', ', array_map(fn ($v) => is_null($v) ? 'NULL' : (is_numeric($v) ? $v : "'".addslashes((string) $v)."'"), $bindings));
+                        $rollbackSqlParts[] = "INSERT INTO {$q}{$table}{$q} ({$colList}) VALUES ({$vals})";
                     } else {
                         // Restore updated rows
                         $pkValue = $row[$pk];
@@ -123,6 +127,17 @@ class RollbackService
                             "UPDATE {$q}{$table}{$q} SET ".implode(', ', $setClauses)." WHERE {$q}{$pk}{$q} = ?",
                             $bindings
                         );
+
+                        $setParts = [];
+                        foreach ($row as $col => $value) {
+                            if ($col === $pk) {
+                                continue;
+                            }
+                            $val = is_null($value) ? 'NULL' : (is_numeric($value) ? $value : "'".addslashes((string) $value)."'");
+                            $setParts[] = "{$q}{$col}{$q} = {$val}";
+                        }
+                        $pkValFormatted = is_numeric($pkValue) ? $pkValue : "'".addslashes((string) $pkValue)."'";
+                        $rollbackSqlParts[] = "UPDATE {$q}{$table}{$q} SET ".implode(', ', $setParts)." WHERE {$q}{$pk}{$q} = {$pkValFormatted}";
                     }
 
                     $count++;
@@ -133,6 +148,7 @@ class RollbackService
                 'status' => QueryStatus::RolledBack->value,
                 'rolled_back_by' => $this->guard->email(),
                 'rolled_back_at' => now(),
+                'rollback_sql' => implode(";\n", $rollbackSqlParts),
                 'rollback_error' => null,
             ]);
 
