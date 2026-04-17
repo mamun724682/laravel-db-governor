@@ -415,136 +415,9 @@
         @click.self="consoleOpen = false"
         @keydown.escape.window="consoleOpen = false"
         style="display: none;"
-        x-data="{
-            consoleTab: 'raw',
-            sql: '',
-            loading: false,
-            result: null,
-            error: null,
-            writeModal: false,
-            pendingWrite: null,
-            qbTable: '',
-            qbColumns: [],
-            qbSelectedColumns: [],
-            qbWhereCol: '',
-            qbWhereOp: '=',
-            qbWhereVal: '',
-            qbOrderBy: '',
-            qbOrderDir: 'ASC',
-            qbLimit: 100,
-            sqlKeywords: ['SELECT','INSERT','UPDATE','DELETE','FROM','WHERE','JOIN','LEFT JOIN',
-                          'INNER JOIN','RIGHT JOIN','ORDER BY','GROUP BY','HAVING','LIMIT',
-                          'OFFSET','AND','OR','NOT','IN','LIKE','IS NULL','IS NOT NULL',
-                          'CREATE','DROP','ALTER','TRUNCATE','WITH','DISTINCT','AS','ON',
-                          'SET','INTO','VALUES','REPLACE','EXPLAIN'],
-            tableNames: @json($tables),
-            autocompleteList: [],
-            autocompleteIndex: -1,
-            get columnNames() {
-                return this.qbColumns.map(c => c.name);
-            },
-            autocomplete(value) {
-                const match = value.match(/[\w.]+$/);
-                const token = match ? match[0] : '';
-                if (!token || token.length < 1) { this.autocompleteList = []; return; }
-                const dotIdx = token.indexOf('.');
-                let candidates = [];
-                if (dotIdx > 0) {
-                    const tbl = token.slice(0, dotIdx);
-                    const col = token.slice(dotIdx + 1).toUpperCase();
-                    if (this.qbTable === tbl || this.tableNames.includes(tbl)) {
-                        candidates = this.columnNames.filter(c => c.toUpperCase().startsWith(col));
-                    }
-                } else {
-                    const up = token.toUpperCase();
-                    const kwMatches = this.sqlKeywords.filter(k => k.startsWith(up));
-                    const tblMatches = this.tableNames.filter(t => t.toUpperCase().startsWith(up));
-                    candidates = [...new Set([...kwMatches, ...tblMatches])];
-                }
-                this.autocompleteList  = candidates.filter(c => c !== token.toUpperCase() && c !== token);
-                this.autocompleteIndex = -1;
-            },
-            insertSuggestion(item) {
-                const before   = this.sql.replace(/[\w.]+$/, '');
-                this.sql       = before + item;
-                this.autocompleteList  = [];
-                this.autocompleteIndex = -1;
-            },
-            acKeydown(e) {
-                if (!this.autocompleteList.length) { return; }
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    this.autocompleteIndex = Math.min(this.autocompleteIndex + 1, this.autocompleteList.length - 1);
-                } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    this.autocompleteIndex = Math.max(this.autocompleteIndex - 1, 0);
-                } else if ((e.key === 'Tab' || e.key === 'Enter') && this.autocompleteIndex >= 0) {
-                    e.preventDefault();
-                    this.insertSuggestion(this.autocompleteList[this.autocompleteIndex]);
-                } else if (e.key === 'Escape') {
-                    this.autocompleteList = [];
-                }
-            },
-            async loadColumns(tbl) {
-                this.qbColumns = [];
-                this.qbSelectedColumns = [];
-                if (!tbl) { return; }
-                try {
-                    const res = await fetch('{{ route('db-governor.schema.table', ['token' => $token, 'connection' => $currentConnection, 'table' => '__TABLE__']) }}'.replace('__TABLE__', tbl));
-                    const data = await res.json();
-                    this.qbColumns = data.columns || [];
-                } catch (e) {}
-            },
-            generateSql() {
-                const cols = this.qbSelectedColumns.length ? this.qbSelectedColumns.join(', ') : '*';
-                let q = 'SELECT ' + cols + ' FROM ' + this.qbTable;
-                if (this.qbWhereCol && this.qbWhereVal !== '') {
-                    q += ' WHERE ' + this.qbWhereCol + ' ' + this.qbWhereOp + ' \'' + this.qbWhereVal + '\'';
-                }
-                if (this.qbOrderBy) { q += ' ORDER BY ' + this.qbOrderBy + ' ' + this.qbOrderDir; }
-                if (this.qbLimit) { q += ' LIMIT ' + this.qbLimit; }
-                this.sql = q;
-                this.consoleTab = 'raw';
-            },
-            async run() {
-                this.loading = true;
-                this.result  = null;
-                this.error   = null;
-                const knownVerbs = ['SELECT','INSERT','UPDATE','DELETE','CREATE','DROP',
-                                    'ALTER','TRUNCATE','WITH','REPLACE','EXPLAIN'];
-                const firstWord  = this.sql.trim().split(/\s+/)[0].toUpperCase();
-                if (!knownVerbs.includes(firstWord)) {
-                    this.error   = 'Invalid SQL: statement must begin with a recognised SQL verb (SELECT, INSERT, …).';
-                    this.loading = false;
-                    return;
-                }
-                try {
-                    const res = await fetch('{{ route('db-governor.sql.execute', ['token' => $token, 'connection' => $currentConnection]) }}', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content ?? '' },
-                        body: JSON.stringify({ sql: this.sql }),
-                    });
-                    const data = await res.json();
-                    if (data.blocked) {
-                        this.error = 'Query blocked: ' + (data.message ?? 'policy violation');
-                    } else if (data.type === 'write') {
-                        this.pendingWrite = data;
-                        this.writeModal   = true;
-                    } else if (data.error) {
-                        this.error = data.error;
-                    } else {
-                        this.result = data;
-                    }
-                } catch (e) {
-                    this.error = e.message;
-                } finally {
-                    this.loading = false;
-                }
-            }
-        }"
         data-endpoint="db-governor.sql.execute"
     >
-        <div class="w-full max-w-3xl rounded-2xl bg-white shadow-xl flex flex-col max-h-[90vh]" @click.stop>
+        <div class="w-full max-w-3xl rounded-2xl bg-white shadow-xl flex flex-col max-h-[90vh]" @click.stop x-data="sqlConsole()">
 
             {{-- Console header --}}
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
@@ -740,4 +613,141 @@
 
     </div>
 @endsection
+
+@push('scripts')
+<script>
+function sqlConsole() {
+    return {
+        consoleTab: 'raw',
+        sql: '',
+        loading: false,
+        result: null,
+        error: null,
+        writeModal: false,
+        pendingWrite: null,
+        qbTable: '',
+        qbColumns: [],
+        qbSelectedColumns: [],
+        qbWhereCol: '',
+        qbWhereOp: '=',
+        qbWhereVal: '',
+        qbOrderBy: '',
+        qbOrderDir: 'ASC',
+        qbLimit: 100,
+        sqlKeywords: ['SELECT','INSERT','UPDATE','DELETE','FROM','WHERE','JOIN','LEFT JOIN',
+                      'INNER JOIN','RIGHT JOIN','ORDER BY','GROUP BY','HAVING','LIMIT',
+                      'OFFSET','AND','OR','NOT','IN','LIKE','IS NULL','IS NOT NULL',
+                      'CREATE','DROP','ALTER','TRUNCATE','WITH','DISTINCT','AS','ON',
+                      'SET','INTO','VALUES','REPLACE','EXPLAIN'],
+        tableNames: @json($tables),
+        autocompleteList: [],
+        autocompleteIndex: -1,
+        get columnNames() {
+            return this.qbColumns.map(c => c.name);
+        },
+        autocomplete(value) {
+            const match = value.match(/[\w.]+$/);
+            const token = match ? match[0] : '';
+            if (!token || token.length < 1) { this.autocompleteList = []; return; }
+            const dotIdx = token.indexOf('.');
+            let candidates = [];
+            if (dotIdx > 0) {
+                const tbl = token.slice(0, dotIdx);
+                const col = token.slice(dotIdx + 1).toUpperCase();
+                if (this.qbTable === tbl || this.tableNames.includes(tbl)) {
+                    candidates = this.columnNames.filter(c => c.toUpperCase().startsWith(col));
+                }
+            } else {
+                const up = token.toUpperCase();
+                const kwMatches = this.sqlKeywords.filter(k => k.startsWith(up));
+                const tblMatches = this.tableNames.filter(t => t.toUpperCase().startsWith(up));
+                candidates = [...new Set([...kwMatches, ...tblMatches])];
+            }
+            this.autocompleteList  = candidates.filter(c => c !== token.toUpperCase() && c !== token);
+            this.autocompleteIndex = -1;
+        },
+        insertSuggestion(item) {
+            const before = this.sql.replace(/[\w.]+$/, '');
+            this.sql = before + item;
+            this.autocompleteList  = [];
+            this.autocompleteIndex = -1;
+        },
+        acKeydown(e) {
+            if (!this.autocompleteList.length) { return; }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                this.autocompleteIndex = Math.min(this.autocompleteIndex + 1, this.autocompleteList.length - 1);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                this.autocompleteIndex = Math.max(this.autocompleteIndex - 1, 0);
+            } else if ((e.key === 'Tab' || e.key === 'Enter') && this.autocompleteIndex >= 0) {
+                e.preventDefault();
+                this.insertSuggestion(this.autocompleteList[this.autocompleteIndex]);
+            } else if (e.key === 'Escape') {
+                this.autocompleteList = [];
+            }
+        },
+        async loadColumns(tbl) {
+            this.qbColumns = [];
+            this.qbSelectedColumns = [];
+            if (!tbl) { return; }
+            try {
+                const res = await fetch('{{ route('db-governor.schema.table', ['token' => $token, 'connection' => $currentConnection, 'table' => '__TABLE__']) }}'.replace('__TABLE__', tbl));
+                const data = await res.json();
+                this.qbColumns = data.columns || [];
+            } catch (e) {}
+        },
+        generateSql() {
+            const cols = this.qbSelectedColumns.length ? this.qbSelectedColumns.join(', ') : '*';
+            let q = 'SELECT ' + cols + ' FROM ' + this.qbTable;
+            if (this.qbWhereCol && this.qbWhereVal !== '') {
+                q += ' WHERE ' + this.qbWhereCol + ' ' + this.qbWhereOp + " '" + this.qbWhereVal + "'";
+            }
+            if (this.qbOrderBy) { q += ' ORDER BY ' + this.qbOrderBy + ' ' + this.qbOrderDir; }
+            if (this.qbLimit) { q += ' LIMIT ' + this.qbLimit; }
+            this.sql = q;
+            this.consoleTab = 'raw';
+        },
+        async run() {
+            this.loading = true;
+            this.result  = null;
+            this.error   = null;
+            const knownVerbs = ['SELECT','INSERT','UPDATE','DELETE','CREATE','DROP',
+                                'ALTER','TRUNCATE','WITH','REPLACE','EXPLAIN'];
+            const firstWord = this.sql.trim().split(/\s+/)[0].toUpperCase();
+            if (!knownVerbs.includes(firstWord)) {
+                this.error   = 'Invalid SQL: statement must begin with a recognised SQL verb (SELECT, INSERT, …).';
+                this.loading = false;
+                return;
+            }
+            try {
+                const res = await fetch('{{ route('db-governor.sql.execute', ['token' => $token, 'connection' => $currentConnection]) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content ?? ''
+                    },
+                    body: JSON.stringify({ sql: this.sql }),
+                });
+                const data = await res.json();
+                if (data.blocked) {
+                    this.error = 'Query blocked: ' + (data.message ?? 'policy violation');
+                } else if (data.type === 'write') {
+                    this.pendingWrite = data;
+                    this.writeModal   = true;
+                } else if (data.error) {
+                    this.error = data.error;
+                } else {
+                    this.result = data;
+                }
+            } catch (e) {
+                this.error = e.message;
+            } finally {
+                this.loading = false;
+            }
+        }
+    };
+}
+</script>
+@endpush
 
