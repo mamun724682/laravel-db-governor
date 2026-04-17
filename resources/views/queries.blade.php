@@ -121,7 +121,6 @@
                 <thead class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     <tr>
                         <th class="px-4 py-2.5">Name</th>
-                        <th class="px-4 py-2.5">Type</th>
                         <th class="px-4 py-2.5">Risk</th>
                         <th class="px-4 py-2.5">Status</th>
                         @if ($isAdmin)
@@ -138,11 +137,6 @@
                             <td class="px-4 py-3 max-w-xs">
                                 <p class="font-medium text-gray-800 truncate">{{ $query->name ?? '—' }}</p>
                                 <p class="text-xs text-gray-400 font-mono truncate">{{ substr($query->id, 0, 8) }}…</p>
-                            </td>
-                            <td class="px-4 py-3">
-                                <span class="inline-flex rounded-full bg-gray-100 text-gray-600 px-2 py-0.5 text-xs font-semibold uppercase">
-                                    {{ $query->query_type }}
-                                </span>
                             </td>
                             <td class="px-4 py-3">
                                 <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold uppercase {{ $riskColors[$query->risk_level] ?? 'bg-gray-50 text-gray-600' }}">
