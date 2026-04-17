@@ -126,7 +126,8 @@
                         @if ($isAdmin)
                             <th class="px-4 py-2.5">Submitted by</th>
                         @endif
-                        <th class="px-4 py-2.5">Snapshot</th>
+                        <th class="px-4 py-2.5">Connection</th>
+                        <th class="px-4 py-2.5">Table</th>
                         <th class="px-4 py-2.5">Date</th>
                         <th class="px-4 py-2.5"></th>
                     </tr>
@@ -151,12 +152,11 @@
                             @if ($isAdmin)
                                 <td class="px-4 py-3 text-xs text-gray-500">{{ $query->submitted_by }}</td>
                             @endif
-                            <td class="px-4 py-3 text-xs text-gray-500">
-                                @if ($query->snapshot_table)
-                                    <a href="{{ route('db-governor.table.show', ['token' => $token, 'connection' => $currentConnection, 'table' => $query->snapshot_table]) }}"
-                                       class="text-indigo-600 hover:text-indigo-800 hover:underline font-mono">
-                                        🗄 {{ $query->snapshot_table }}
-                                    </a>
+                            <td class="px-4 py-3 text-xs text-gray-400 font-mono">{{ $query->connection ?? '—' }}</td>
+                            <td class="px-4 py-3 text-xs">
+                                @if ($query->query_table)
+                                    <a href="{{ route('db-governor.table.show', ['token' => $token, 'connection' => $currentConnection, 'table' => $query->query_table]) }}"
+                                       class="text-indigo-600 hover:text-indigo-800 hover:underline font-mono">🗄 {{ $query->query_table }}</a>
                                 @else
                                     <span class="text-gray-300">—</span>
                                 @endif
