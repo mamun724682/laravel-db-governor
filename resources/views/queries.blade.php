@@ -329,6 +329,16 @@
                                     <template x-if="modal.execution_error">
                                         <p class="mt-2 text-red-600"><span class="font-medium">Error: </span><span x-text="modal.execution_error"></span></p>
                                     </template>
+                                    <template x-if="modal.snapshot_data">
+                                        <div class="mt-3">
+                                            <p class="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">Snapshot Data
+                                                <template x-if="modal.snapshot_table">
+                                                    <span class="normal-case font-normal text-blue-400 ml-1">(<span x-text="modal.snapshot_table"></span>)</span>
+                                                </template>
+                                            </p>
+                                            <pre class="rounded-lg bg-white border border-blue-100 p-3 text-xs font-mono text-gray-700 overflow-x-auto max-h-48 whitespace-pre-wrap" x-text="typeof modal.snapshot_data === 'string' ? modal.snapshot_data : JSON.stringify(modal.snapshot_data, null, 2)"></pre>
+                                        </div>
+                                    </template>
                                 </div>
                             </template>
 
@@ -351,18 +361,6 @@
                                     <template x-if="modal.rollback_error">
                                         <p class="mt-2 text-red-600"><span class="font-medium">Error: </span><span x-text="modal.rollback_error"></span></p>
                                     </template>
-                                </div>
-                            </template>
-
-                            {{-- Snapshot data --}}
-                            <template x-if="modal.snapshot_data">
-                                <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 text-xs">
-                                    <p class="font-semibold text-gray-500 uppercase tracking-wider mb-2">Snapshot Data
-                                        <template x-if="modal.snapshot_table">
-                                            <span class="normal-case font-normal text-gray-400 ml-1">— <span x-text="modal.snapshot_table"></span></span>
-                                        </template>
-                                    </p>
-                                    <pre class="rounded-lg bg-white border border-gray-200 p-3 text-xs font-mono text-gray-700 overflow-x-auto max-h-48 whitespace-pre-wrap" x-text="typeof modal.snapshot_data === 'string' ? modal.snapshot_data : JSON.stringify(modal.snapshot_data, null, 2)"></pre>
                                 </div>
                             </template>
 
