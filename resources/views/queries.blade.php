@@ -630,25 +630,33 @@
                         </div>
                     </template>
 
-                    {{-- INSERT: col=val pairs --}}
+                    {{-- INSERT: auto-populate all columns, value input only --}}
                     <template x-if="qbType === 'INSERT'">
                         <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Values</label>
-                                <button type="button" @click="qbInsertRows.push({col:'',val:''})" class="text-xs text-indigo-600 hover:text-indigo-800">+ Add column</button>
-                            </div>
-                            <template x-for="(row, i) in qbInsertRows" :key="i">
-                                <div class="flex gap-2 items-center">
-                                    <input type="text" x-model="row.col" placeholder="column" class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                    <span class="text-gray-400 text-xs">=</span>
-                                    <input type="text" x-model="row.val" placeholder="value" class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                    <button type="button" @click="qbInsertRows.splice(i,1)" class="text-gray-400 hover:text-red-500 text-xs">✕</button>
+                            <template x-if="!qbTable">
+                                <p class="text-xs text-gray-400 italic">Select a table above to load columns.</p>
+                            </template>
+                            <template x-if="qbTable && qbColumns.length === 0">
+                                <p class="text-xs text-gray-400 italic">Loading columns…</p>
+                            </template>
+                            <template x-if="qbColumns.length > 0">
+                                <div class="space-y-2">
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Values</label>
+                                    <template x-for="(col, i) in qbColumns" :key="col.name">
+                                        <div class="flex gap-3 items-center">
+                                            <span class="w-36 text-xs font-mono text-gray-700 truncate flex-shrink-0" x-text="col.name + (col.type ? ' (' + col.type + ')' : '')"></span>
+                                            <span class="text-gray-300 text-xs">=</span>
+                                            <input type="text" :placeholder="col.type || 'value'"
+                                                x-model="qbInsertRows[i].val"
+                                                class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                        </div>
+                                    </template>
                                 </div>
                             </template>
                         </div>
                     </template>
 
-                    {{-- UPDATE: SET col=val + WHERE --}}
+                    {{-- UPDATE: SET col (select) = val + WHERE col (select) --}}
                     <template x-if="qbType === 'UPDATE'">
                         <div class="space-y-3">
                             <div class="flex items-center justify-between">
@@ -657,7 +665,12 @@
                             </div>
                             <template x-for="(row, i) in qbSetRows" :key="i">
                                 <div class="flex gap-2 items-center">
-                                    <input type="text" x-model="row.col" placeholder="column" class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                    <select x-model="row.col" class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                        <option value="">— column —</option>
+                                        <template x-for="col in qbColumns" :key="col.name">
+                                            <option :value="col.name" x-text="col.name"></option>
+                                        </template>
+                                    </select>
                                     <span class="text-gray-400 text-xs">=</span>
                                     <input type="text" x-model="row.val" placeholder="value" class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                                     <button type="button" @click="qbSetRows.splice(i,1)" class="text-gray-400 hover:text-red-500 text-xs">✕</button>
@@ -666,7 +679,12 @@
                             <div class="grid grid-cols-3 gap-2 pt-1">
                                 <div>
                                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">WHERE column</label>
-                                    <input type="text" x-model="qbWhereCol" placeholder="e.g. id" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                    <select x-model="qbWhereCol" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                        <option value="">— column —</option>
+                                        <template x-for="col in qbColumns" :key="col.name">
+                                            <option :value="col.name" x-text="col.name"></option>
+                                        </template>
+                                    </select>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Operator</label>
@@ -682,7 +700,7 @@
                         </div>
                     </template>
 
-                    {{-- DELETE: WHERE only --}}
+                    {{-- DELETE: WHERE col (select) --}}
                     <template x-if="qbType === 'DELETE'">
                         <div class="space-y-3">
                             <div class="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
@@ -691,7 +709,12 @@
                             <div class="grid grid-cols-3 gap-2">
                                 <div>
                                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">WHERE column</label>
-                                    <input type="text" x-model="qbWhereCol" placeholder="e.g. id" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                    <select x-model="qbWhereCol" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                        <option value="">— column —</option>
+                                        <template x-for="col in qbColumns" :key="col.name">
+                                            <option :value="col.name" x-text="col.name"></option>
+                                        </template>
+                                    </select>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Operator</label>
@@ -805,11 +828,15 @@ function sqlConsole() {
         async loadColumns(tbl) {
             this.qbColumns = [];
             this.qbSelectedColumns = [];
+            this.qbInsertRows = [];
+            this.qbSetRows = [{col: '', val: ''}];
+            this.qbWhereCol = '';
             if (!tbl) { return; }
             try {
                 const res = await fetch('{{ route('db-governor.schema.table', ['token' => $token, 'connection' => $currentConnection, 'table' => '__TABLE__']) }}'.replace('__TABLE__', tbl));
                 const data = await res.json();
                 this.qbColumns = data.columns || [];
+                this.qbInsertRows = this.qbColumns.map(c => ({col: c.name, val: ''}));
             } catch (e) {}
         },
         generateSql() {
