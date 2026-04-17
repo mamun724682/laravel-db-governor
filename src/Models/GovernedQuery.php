@@ -49,9 +49,9 @@ class GovernedQuery extends Model
     ];
 
     protected $casts = [
-        'risk_flags'     => 'array',
-        'reviewed_at'    => 'datetime',
-        'executed_at'    => 'datetime',
+        'risk_flags' => 'array',
+        'reviewed_at' => 'datetime',
+        'executed_at' => 'datetime',
         'rolled_back_at' => 'datetime',
     ];
 
@@ -64,6 +64,26 @@ class GovernedQuery extends Model
     {
         return config('db-governor.governance_connection') ?? config('database.default');
     }
+
+    /**
+     * Compute the primary table referenced by this query without a DB column.
+     * Tries to extract from sql_raw first, falls back to snapshot_table.
+     */
+    public function getQueryTableAttribute(): ?string
+    {
+        if (! empty($this->snapshot_table)) {
+            return $this->snapshot_table;
+        }
+
+        if (empty($this->sql_raw)) {
+            return null;
+        }
+
+        // Match: FROM `table`, FROM "table", FROM table, INTO `table`, UPDATE `table`
+        if (preg_match('/\b(?:FROM|INTO|UPDATE|JOIN)\s+[`"]?(\w+)[`"]?/i', $this->sql_raw, $m)) {
+            return $m[1];
+        }
+
+        return null;
+    }
 }
-
-
