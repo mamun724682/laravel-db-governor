@@ -5,6 +5,7 @@ namespace Mamun724682\DbGovernor\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\View\View;
+use Mamun724682\DbGovernor\Drivers\DbInspector;
 use Mamun724682\DbGovernor\Enums\QueryStatus;
 use Mamun724682\DbGovernor\Enums\QueryType;
 use Mamun724682\DbGovernor\Enums\RiskLevel;
@@ -29,16 +30,16 @@ class TableController
             abort(404);
         }
 
-        $conn      = $this->connectionManager->resolve($connection);
+        $conn = $this->connectionManager->resolve($connection);
         $inspector = $this->connectionManager->inspector($connection);
-        $columns   = $inspector->listColumns($table, $conn);
-        $quoted    = $inspector->quoteIdentifier($table);
-        $tables    = $this->connectionManager->listTables($connection);
+        $columns = $inspector->listColumns($table, $conn);
+        $quoted = $inspector->quoteIdentifier($table);
+        $tables = $this->connectionManager->listTables($connection);
 
-        $perPage     = 25;
-        $page        = max(1, (int) $request->query('page', 1));
-        $sort        = $request->query('sort');
-        $dir         = $request->query('dir', 'asc') === 'desc' ? 'DESC' : 'ASC';
+        $perPage = 25;
+        $page = max(1, (int) $request->query('page', 1));
+        $sort = $request->query('sort');
+        $dir = $request->query('dir', 'asc') === 'desc' ? 'DESC' : 'ASC';
         $columnNames = array_column($columns, 'name');
 
         $orderBy = '';
@@ -54,7 +55,7 @@ class TableController
 
         // Fetch one extra row to detect a next page — no COUNT(*) needed.
         $offset = ($page - 1) * $perPage;
-        $rows   = array_map(
+        $rows = array_map(
             fn ($r) => (array) $r,
             $conn->select(
                 "SELECT * FROM {$quoted} {$where} {$orderBy} LIMIT ".($perPage + 1)." OFFSET {$offset}",
@@ -64,15 +65,17 @@ class TableController
 
         // Log filtered browsing as a read entry
         if ($where !== '' && config('db-governor.log_read_queries', true)) {
+            $sqlWithValues = $this->bindValuesIntoSql("SELECT * FROM {$quoted} {$where}", $bindings);
             GovernedQuery::create([
-                'connection'    => $connection,
-                'sql_raw'       => "SELECT * FROM {$quoted} {$where}",
-                'query_type'    => QueryType::Read->value,
-                'status'        => QueryStatus::Executed->value,
-                'risk_level'    => RiskLevel::Low->value,
-                'submitted_by'  => $this->guard->email(),
-                'executed_by'   => $this->guard->email(),
-                'executed_at'   => now(),
+                'connection' => $connection,
+                'name' => $this->nameFromFilterSql($table, $where, $bindings),
+                'sql_raw' => $sqlWithValues,
+                'query_type' => QueryType::Read->value,
+                'status' => QueryStatus::Executed->value,
+                'risk_level' => RiskLevel::Low->value,
+                'submitted_by' => $this->guard->email(),
+                'executed_by' => $this->guard->email(),
+                'executed_at' => now(),
                 'rows_affected' => max(0, count($rows) - (count($rows) > $perPage ? 1 : 0)),
             ]);
         }
@@ -95,14 +98,14 @@ class TableController
     /**
      * Build a parameterised WHERE clause from the filter request input.
      *
-     * @param  array<mixed>   $input
+     * @param  array<mixed>  $input
      * @param  array<string>  $columnNames
      * @return array{0: string, 1: array<mixed>, 2: array<mixed>}
      */
-    private function buildWhere(array $input, array $columnNames, \Mamun724682\DbGovernor\Drivers\DbInspector $inspector): array
+    private function buildWhere(array $input, array $columnNames, DbInspector $inspector): array
     {
-        $whereParts   = [];
-        $bindings     = [];
+        $whereParts = [];
+        $bindings = [];
         $filterGroups = [];
 
         foreach ($input as $group) {
@@ -111,11 +114,11 @@ class TableController
             }
 
             $groupConditions = [];
-            $groupFilters    = [];
+            $groupFilters = [];
 
             foreach ($group as $filter) {
                 $col = trim((string) ($filter['col'] ?? ''));
-                $op  = strtoupper(trim((string) ($filter['op'] ?? '=')));
+                $op = strtoupper(trim((string) ($filter['op'] ?? '=')));
                 $val = (string) ($filter['val'] ?? '');
 
                 $groupFilters[] = ['col' => $col, 'op' => $op, 'val' => $val];
@@ -133,13 +136,13 @@ class TableController
                 if ($op === 'IS NULL' || $op === 'IS NOT NULL') {
                     $groupConditions[] = "{$quotedCol} {$op}";
                 } elseif ($op === 'IN') {
-                    $vals         = array_filter(array_map('trim', explode(',', $val)));
+                    $vals = array_filter(array_map('trim', explode(',', $val)));
                     $placeholders = implode(',', array_fill(0, count($vals), '?'));
                     $groupConditions[] = "{$quotedCol} IN ({$placeholders})";
-                    $bindings          = array_merge($bindings, array_values($vals));
+                    $bindings = array_merge($bindings, array_values($vals));
                 } else {
                     $groupConditions[] = "{$quotedCol} {$op} ?";
-                    $bindings[]        = $val;
+                    $bindings[] = $val;
                 }
             }
 
@@ -159,5 +162,40 @@ class TableController
         $where = ! empty($whereParts) ? 'WHERE '.implode(' OR ', $whereParts) : '';
 
         return [$where, $bindings, $filterGroups];
+    }
+
+    /**
+     * Replace ? placeholders with their bound values for display / audit purposes.
+     *
+     * @param  array<mixed>  $bindings
+     */
+    private function bindValuesIntoSql(string $sql, array $bindings): string
+    {
+        $index = 0;
+
+        return preg_replace_callback('/\?/', function () use (&$index, $bindings): string {
+            $val = $bindings[$index++] ?? 'NULL';
+
+            return is_numeric($val) ? (string) $val : "'".addslashes((string) $val)."'";
+        }, $sql) ?? $sql;
+    }
+
+    /**
+     * Generate a human-readable name for a filtered table browse log entry.
+     *
+     * @param  array<mixed>  $bindings
+     */
+    private function nameFromFilterSql(string $table, string $where, array $bindings): string
+    {
+        if ($where === '') {
+            return "Browse {$table}";
+        }
+
+        $readable = $this->bindValuesIntoSql($where, $bindings);
+        $readable = preg_replace('/^WHERE\s+/i', '', $readable) ?? $readable;
+
+        $label = "Browse {$table} WHERE ".$readable;
+
+        return mb_strlen($label) > 120 ? mb_substr($label, 0, 117).'…' : $label;
     }
 }

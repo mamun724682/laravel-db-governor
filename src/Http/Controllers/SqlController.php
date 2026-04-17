@@ -38,7 +38,7 @@ class SqlController
         if (! in_array($firstWord, $knownVerbs, true)) {
             return response()->json([
                 'success' => false,
-                'error'   => 'Invalid SQL: statement must begin with a recognised SQL verb (SELECT, INSERT, UPDATE, …).',
+                'error' => 'Invalid SQL: statement must begin with a recognised SQL verb (SELECT, INSERT, UPDATE, …).',
             ]);
         }
 
@@ -56,15 +56,16 @@ class SqlController
 
             if ($result->success && config('db-governor.log_read_queries', true)) {
                 GovernedQuery::create([
-                    'connection'        => $connection,
-                    'sql_raw'           => $sql,
-                    'query_type'        => QueryType::Read->value,
-                    'status'            => QueryStatus::Executed->value,
-                    'risk_level'        => RiskLevel::Low->value,
-                    'submitted_by'      => $this->guard->email(),
-                    'executed_by'       => $this->guard->email(),
-                    'executed_at'       => now(),
-                    'rows_affected'     => $result->rowsAffected,
+                    'connection' => $connection,
+                    'name' => $this->nameFromSql($sql),
+                    'sql_raw' => $sql,
+                    'query_type' => QueryType::Read->value,
+                    'status' => QueryStatus::Executed->value,
+                    'risk_level' => RiskLevel::Low->value,
+                    'submitted_by' => $this->guard->email(),
+                    'executed_by' => $this->guard->email(),
+                    'executed_at' => now(),
+                    'rows_affected' => $result->rowsAffected,
                     'execution_time_ms' => $result->executionTimeMs,
                 ]);
             }
@@ -91,5 +92,27 @@ class SqlController
             'estimated_rows' => $risk->estimatedRows,
             'blocked' => $risk->blocked,
         ]);
+    }
+
+    /**
+     * Generate a short human-readable name from a raw SQL string.
+     * E.g. "SELECT * FROM users WHERE id = 1" → "Read: users"
+     */
+    private function nameFromSql(string $sql): string
+    {
+        $sql = trim($sql);
+        $verb = strtoupper(strtok($sql, " \t\n\r") ?: 'SELECT');
+        $pattern = '/\bFROM\s+[`"\[]?(\w+)[`"\]]?/i';
+
+        if (preg_match($pattern, $sql, $m)) {
+            $table = $m[1];
+            $hasWhere = (bool) preg_match('/\bWHERE\b/i', $sql);
+
+            return "Read: {$table}".($hasWhere ? ' (filtered)' : '');
+        }
+
+        $short = mb_substr($sql, 0, 60);
+
+        return mb_strlen($sql) > 60 ? $short.'…' : $short;
     }
 }
