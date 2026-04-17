@@ -13,4 +13,3 @@ readonly class RiskReport
         public ?int $estimatedRows,
     ) {}
 }
-

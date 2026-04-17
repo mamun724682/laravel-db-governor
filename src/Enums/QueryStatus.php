@@ -11,4 +11,3 @@ enum QueryStatus: string
     case RolledBack = 'rolled_back';
     case Blocked = 'blocked';
 }
-

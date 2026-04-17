@@ -84,4 +84,3 @@ class PgsqlInspector implements DbInspector
         return null;
     }
 }
-

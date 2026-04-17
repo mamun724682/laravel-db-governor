@@ -9,4 +9,3 @@ class QueryBlockedException extends \RuntimeException
         parent::__construct('Query blocked: '.implode('; ', $flags));
     }
 }
-

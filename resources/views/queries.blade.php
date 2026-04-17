@@ -301,11 +301,11 @@
                                         <template x-if="modal.execution_time_ms !== null && modal.execution_time_ms !== undefined">
                                             <span x-text="modal.execution_time_ms + ' ms'"></span>
                                         </template>
-                                        <template x-if="modal.snapshot_table">
-                                            <span class="text-gray-400">Snapshot table</span>
+                                        <template x-if="modal.query_table">
+                                            <span class="text-gray-400">Table</span>
                                         </template>
-                                        <template x-if="modal.snapshot_table">
-                                            <span x-text="modal.snapshot_table"></span>
+                                        <template x-if="modal.query_table">
+                                            <span x-text="modal.query_table"></span>
                                         </template>
                                         <template x-if="modal.snapshot_primary_key">
                                             <span class="text-gray-400">Snapshot PK</span>
@@ -332,8 +332,8 @@
                                     <template x-if="modal.snapshot_data">
                                         <div class="mt-3">
                                             <p class="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">Snapshot Data
-                                                <template x-if="modal.snapshot_table">
-                                                    <span class="normal-case font-normal text-blue-400 ml-1">(<span x-text="modal.snapshot_table"></span>)</span>
+                                                <template x-if="modal.query_table">
+                                                    <span class="normal-case font-normal text-blue-400 ml-1">(<span x-text="modal.query_table"></span>)</span>
                                                 </template>
                                             </p>
                                             <pre class="rounded-lg bg-white border border-blue-100 p-3 text-xs font-mono text-gray-700 overflow-x-auto max-h-48 whitespace-pre-wrap" x-text="typeof modal.snapshot_data === 'string' ? modal.snapshot_data : JSON.stringify(modal.snapshot_data, null, 2)"></pre>

@@ -16,6 +16,7 @@ class GovernedQuery extends Model
     protected $fillable = [
         'id',
         'connection',
+        'query_table',
         'created_at',
         'updated_at',
         'sql_raw',
@@ -39,7 +40,6 @@ class GovernedQuery extends Model
         'execution_error',
         'snapshot_strategy',
         'snapshot_data',
-        'snapshot_table',
         'snapshot_primary_key',
         'snapshot_size_bytes',
         'rollback_sql',
@@ -63,27 +63,5 @@ class GovernedQuery extends Model
     public function getConnectionName(): string
     {
         return config('db-governor.governance_connection') ?? config('database.default');
-    }
-
-    /**
-     * Compute the primary table referenced by this query without a DB column.
-     * Tries to extract from sql_raw first, falls back to snapshot_table.
-     */
-    public function getQueryTableAttribute(): ?string
-    {
-        if (! empty($this->snapshot_table)) {
-            return $this->snapshot_table;
-        }
-
-        if (empty($this->sql_raw)) {
-            return null;
-        }
-
-        // Match: FROM `table`, FROM "table", FROM table, INTO `table`, UPDATE `table`
-        if (preg_match('/\b(?:FROM|INTO|UPDATE|JOIN)\s+[`"]?(\w+)[`"]?/i', $this->sql_raw, $m)) {
-            return $m[1];
-        }
-
-        return null;
     }
 }

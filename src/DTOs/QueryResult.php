@@ -12,4 +12,3 @@ readonly class QueryResult
         public ?string $error = null,
     ) {}
 }
-

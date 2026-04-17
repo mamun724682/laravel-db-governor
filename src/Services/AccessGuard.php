@@ -60,7 +60,7 @@ class AccessGuard
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public function setPayload(array $payload): void
     {
@@ -97,12 +97,12 @@ class AccessGuard
     private function issueToken(string $email, string $role): string
     {
         $expiryHours = (int) config('db-governor.token_expiry_hours', 8);
-        $expiresAt   = now()->addHours($expiryHours);
-        $token       = Str::random(32);
+        $expiresAt = now()->addHours($expiryHours);
+        $token = Str::random(32);
 
         Cache::put(self::CACHE_PREFIX.$token, [
-            'email'      => $email,
-            'role'       => $role,
+            'email' => $email,
+            'role' => $role,
             'expires_at' => $expiresAt->toISOString(),
         ], $expiresAt);
 
@@ -131,4 +131,3 @@ class AccessGuard
         );
     }
 }
-

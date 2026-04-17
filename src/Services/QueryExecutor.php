@@ -22,7 +22,7 @@ class QueryExecutor
         try {
             $conn = $this->connectionManager->resolve($connectionKey);
             $rows = $conn->select($sql);
-            $ms   = (int) ((microtime(true) - $start) * 1000);
+            $ms = (int) ((microtime(true) - $start) * 1000);
 
             return new QueryResult(
                 success: true,
@@ -43,25 +43,25 @@ class QueryExecutor
             );
         }
 
-        $start    = microtime(true);
-        $conn     = $this->connectionManager->resolve($query->connection);
+        $start = microtime(true);
+        $conn = $this->connectionManager->resolve($query->connection);
         $snapshot = $this->rollbackService->captureBeforeState($query->sql_raw, $query->connection);
 
         try {
             $rowsAffected = $conn->affectingStatement($query->sql_raw);
-            $ms           = (int) ((microtime(true) - $start) * 1000);
+            $ms = (int) ((microtime(true) - $start) * 1000);
 
             $query->update([
-                'status'               => QueryStatus::Executed->value,
-                'executed_by'          => $this->guard->email(),
-                'executed_at'          => now(),
-                'rows_affected'        => $rowsAffected,
-                'execution_time_ms'    => $ms,
-                'snapshot_strategy'    => $snapshot?->strategy,
-                'snapshot_data'        => $snapshot ? json_encode($snapshot->rows) : null,
-                'snapshot_table'       => $snapshot?->tableName,
+                'status' => QueryStatus::Executed->value,
+                'executed_by' => $this->guard->email(),
+                'executed_at' => now(),
+                'rows_affected' => $rowsAffected,
+                'execution_time_ms' => $ms,
+                'snapshot_strategy' => $snapshot?->strategy,
+                'snapshot_data' => $snapshot ? json_encode($snapshot->rows) : null,
+                'query_table' => $snapshot?->tableName,
                 'snapshot_primary_key' => $snapshot?->primaryKey,
-                'snapshot_size_bytes'  => $snapshot ? strlen(json_encode($snapshot->rows) ?: '') : null,
+                'snapshot_size_bytes' => $snapshot ? strlen(json_encode($snapshot->rows) ?: '') : null,
             ]);
 
             return new QueryResult(success: true, rowsAffected: $rowsAffected, executionTimeMs: $ms);
@@ -72,4 +72,3 @@ class QueryExecutor
         }
     }
 }
-

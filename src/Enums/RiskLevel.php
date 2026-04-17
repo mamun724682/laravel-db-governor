@@ -27,4 +27,3 @@ enum RiskLevel: string
         return $this->ordinal() >= $other->ordinal() ? $this : $other;
     }
 }
-

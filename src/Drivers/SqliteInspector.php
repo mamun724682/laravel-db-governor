@@ -78,4 +78,3 @@ class SqliteInspector implements DbInspector
         return null;
     }
 }
-

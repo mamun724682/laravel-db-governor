@@ -74,7 +74,7 @@ it('rollback returns failure when already rolled back', function () {
         'status'               => QueryStatus::RolledBack->value,
         'submitted_by'         => 'dev@test.com',
         'snapshot_data'        => json_encode([['id' => 1, 'name' => 'Alice', 'active' => 1]]),
-        'snapshot_table'       => 'rb_users',
+        'query_table'       => 'rb_users',
         'snapshot_primary_key' => 'id',
         'rolled_back_at'       => now(),
     ]);
@@ -95,7 +95,7 @@ it('rollback restores rows and updates status to rolled_back', function () {
         'status'               => QueryStatus::Executed->value,
         'submitted_by'         => 'dev@test.com',
         'snapshot_data'        => json_encode([['id' => 1, 'name' => 'Alice', 'active' => 1]]),
-        'snapshot_table'       => 'rb_users',
+        'query_table'       => 'rb_users',
         'snapshot_primary_key' => 'id',
     ]);
 

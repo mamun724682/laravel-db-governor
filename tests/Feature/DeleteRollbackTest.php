@@ -95,7 +95,7 @@ it('rollback re-inserts a single deleted row', function () {
         'status'               => QueryStatus::Executed->value,
         'submitted_by'         => 'dev@test.com',
         'snapshot_data'        => json_encode([['id' => 1, 'name' => 'Alice', 'active' => 1]]),
-        'snapshot_table'       => 'del_users',
+        'query_table'       => 'del_users',
         'snapshot_primary_key' => 'id',
     ]);
 
@@ -125,7 +125,7 @@ it('rollback re-inserts multiple deleted rows', function () {
             ['id' => 1, 'name' => 'Alice', 'active' => 1],
             ['id' => 2, 'name' => 'Bob',   'active' => 1],
         ]),
-        'snapshot_table'       => 'del_users',
+        'query_table'       => 'del_users',
         'snapshot_primary_key' => 'id',
     ]);
 
@@ -147,7 +147,7 @@ it('rollback marks query status as rolled_back after re-insert', function () {
         'status'               => QueryStatus::Executed->value,
         'submitted_by'         => 'dev@test.com',
         'snapshot_data'        => json_encode([['id' => 1, 'name' => 'Alice', 'active' => 1]]),
-        'snapshot_table'       => 'del_users',
+        'query_table'       => 'del_users',
         'snapshot_primary_key' => 'id',
     ]);
 
@@ -168,7 +168,7 @@ it('rollback returns failure when attempting to rollback a DELETE twice', functi
         'status'               => QueryStatus::RolledBack->value,
         'submitted_by'         => 'dev@test.com',
         'snapshot_data'        => json_encode([['id' => 1, 'name' => 'Alice', 'active' => 1]]),
-        'snapshot_table'       => 'del_users',
+        'query_table'       => 'del_users',
         'snapshot_primary_key' => 'id',
         'rolled_back_at'       => now(),
     ]);
@@ -196,7 +196,7 @@ it('executeWrite captures snapshot for DELETE and rollback restores rows', funct
 
     $query->refresh();
     expect($query->snapshot_data)->not->toBeNull();
-    expect($query->snapshot_table)->toBe('del_users');
+    expect($query->query_table)->toBe('del_users');
     expect(DB::connection('sqlite')->table('del_users')->count())->toBe(2);
 
     // Now rollback

@@ -2,7 +2,9 @@
 
 namespace Mamun724682\DbGovernor\Services;
 
-use Mamun724682\DbGovernor\DTOs\{PendingQuery, QueryResult, RollbackResult};
+use Mamun724682\DbGovernor\DTOs\PendingQuery;
+use Mamun724682\DbGovernor\DTOs\QueryResult;
+use Mamun724682\DbGovernor\DTOs\RollbackResult;
 use Mamun724682\DbGovernor\Enums\QueryStatus;
 use Mamun724682\DbGovernor\Exceptions\QueryBlockedException;
 use Mamun724682\DbGovernor\Models\GovernedQuery;
@@ -28,16 +30,16 @@ class ApprovalService
         $risk = $this->analyzer->analyze($dto->sql, $dto->connection);
 
         $attributes = [
-            'connection'     => $dto->connection,
-            'sql_raw'        => $dto->sql,
-            'query_type'     => $type->value,
-            'name'           => $dto->name,
-            'description'    => $dto->description,
-            'risk_note'      => $dto->riskNote,
-            'risk_level'     => $risk->level->value,
-            'risk_flags'     => $risk->flags,
+            'connection' => $dto->connection,
+            'sql_raw' => $dto->sql,
+            'query_type' => $type->value,
+            'name' => $dto->name,
+            'description' => $dto->description,
+            'risk_note' => $dto->riskNote,
+            'risk_level' => $risk->level->value,
+            'risk_flags' => $risk->flags,
             'estimated_rows' => $risk->estimatedRows,
-            'submitted_by'   => $this->guard->email(),
+            'submitted_by' => $this->guard->email(),
         ];
 
         if ($risk->blocked) {
@@ -58,7 +60,7 @@ class ApprovalService
         $this->guard->assertAdmin();
 
         GovernedQuery::findOrFail($uuid)->update([
-            'status'      => QueryStatus::Approved->value,
+            'status' => QueryStatus::Approved->value,
             'reviewed_by' => $this->guard->email(),
             'reviewed_at' => now(),
             'review_note' => $note,
@@ -70,7 +72,7 @@ class ApprovalService
         $this->guard->assertAdmin();
 
         GovernedQuery::findOrFail($uuid)->update([
-            'status'      => QueryStatus::Rejected->value,
+            'status' => QueryStatus::Rejected->value,
             'reviewed_by' => $this->guard->email(),
             'reviewed_at' => now(),
             'review_note' => $reason,
@@ -97,4 +99,3 @@ class ApprovalService
         return $this->rollbackService->rollback($query);
     }
 }
-

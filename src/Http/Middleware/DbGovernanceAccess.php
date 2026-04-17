@@ -36,4 +36,3 @@ class DbGovernanceAccess
         return $next($request);
     }
 }
-

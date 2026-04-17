@@ -14,4 +14,3 @@ enum QueryType: string
         return $this === self::Read;
     }
 }
-

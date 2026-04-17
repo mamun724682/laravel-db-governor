@@ -15,6 +15,7 @@ return new class extends Migration
 
             // Query identity
             $table->string('connection');
+            $table->string('query_table')->nullable();
             $table->longText('sql_raw');
             $table->string('query_type');
             $table->string('name')->nullable();
@@ -46,7 +47,6 @@ return new class extends Migration
             // Snapshot / rollback
             $table->string('snapshot_strategy')->nullable();
             $table->longText('snapshot_data')->nullable();
-            $table->string('snapshot_table')->nullable();
             $table->string('snapshot_primary_key')->nullable();
             $table->unsignedBigInteger('snapshot_size_bytes')->nullable();
             $table->longText('rollback_sql')->nullable();

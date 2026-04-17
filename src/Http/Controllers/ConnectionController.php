@@ -19,7 +19,7 @@ class ConnectionController
             $key = array_key_first($connections);
 
             return redirect()->route('db-governor.dashboard', [
-                'token'      => $token,
+                'token' => $token,
                 'connection' => $key,
             ]);
         }
@@ -27,4 +27,3 @@ class ConnectionController
         return view('db-governor::connections', compact('connections', 'token'));
     }
 }
-

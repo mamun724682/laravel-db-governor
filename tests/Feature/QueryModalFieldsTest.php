@@ -39,7 +39,7 @@ it('queries page embeds snapshot fields in modal data', function () {
         'query_type' => 'write', 'risk_level' => 'low',
         'status' => QueryStatus::Executed->value, 'submitted_by' => 'dev@test.com',
         'executed_by' => 'admin@test.com', 'executed_at' => now(),
-        'snapshot_table' => 'users', 'snapshot_primary_key' => 'id',
+        'query_table' => 'users', 'snapshot_primary_key' => 'id',
         'snapshot_strategy' => 'row_snapshot', 'snapshot_size_bytes' => 1024,
         'snapshot_data' => json_encode([['id' => 1]]),
     ]);
@@ -48,7 +48,7 @@ it('queries page embeds snapshot fields in modal data', function () {
         'token' => $this->token, 'connection' => 'main',
     ]))->assertOk()->getContent();
 
-    expect($html)->toContain('snapshot_table')
+    expect($html)->toContain('query_table')
         ->toContain('snapshot_primary_key')
         ->toContain('snapshot_strategy')
         ->toContain('snapshot_size_bytes');

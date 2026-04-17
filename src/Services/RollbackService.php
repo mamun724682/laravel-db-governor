@@ -81,7 +81,7 @@ class RollbackService
         try {
             $rows = json_decode($query->snapshot_data, true) ?? [];
             $conn = $this->connectionManager->resolve($query->connection);
-            $table = $query->snapshot_table;
+            $table = $query->query_table;
             $pk = $query->snapshot_primary_key ?? 'id';
             $q = $conn->getDriverName() === 'mysql' ? '`' : '"';
             $verb = strtoupper($this->classifier->extractVerb($query->sql_raw));

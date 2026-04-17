@@ -22,4 +22,3 @@ interface DbInspector
 
     public function estimateAffectedRows(string $sql, Connection $conn): ?int;
 }
-

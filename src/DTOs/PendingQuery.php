@@ -12,4 +12,3 @@ readonly class PendingQuery
         public ?string $riskNote = null,
     ) {}
 }
-

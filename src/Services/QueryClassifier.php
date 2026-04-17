@@ -67,4 +67,3 @@ class QueryClassifier
         return array_values(array_unique($tables));
     }
 }
-

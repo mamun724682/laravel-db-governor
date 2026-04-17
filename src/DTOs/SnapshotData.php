@@ -11,4 +11,3 @@ readonly class SnapshotData
         public string $primaryKey,
     ) {}
 }
-

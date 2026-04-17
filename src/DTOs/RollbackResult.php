@@ -10,4 +10,3 @@ readonly class RollbackResult
         public ?string $message = null,
     ) {}
 }
-

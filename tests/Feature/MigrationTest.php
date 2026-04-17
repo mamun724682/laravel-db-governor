@@ -28,7 +28,7 @@ it('creates the dbg_queries table with all required columns', function () {
         ->toContain('execution_error')
         ->toContain('snapshot_strategy')
         ->toContain('snapshot_data')
-        ->toContain('snapshot_table')
+        ->toContain('query_table')
         ->toContain('snapshot_primary_key')
         ->toContain('snapshot_size_bytes')
         ->toContain('rollback_sql')

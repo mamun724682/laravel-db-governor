@@ -20,11 +20,10 @@ class SchemaController
             abort(404);
         }
 
-        $conn      = $this->connectionManager->resolve($connection);
+        $conn = $this->connectionManager->resolve($connection);
         $inspector = $this->connectionManager->inspector($connection);
-        $columns   = $inspector->listColumns($table, $conn);
+        $columns = $inspector->listColumns($table, $conn);
 
         return response()->json(['columns' => $columns]);
     }
 }
-

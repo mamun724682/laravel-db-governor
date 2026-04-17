@@ -54,10 +54,10 @@ class ConnectionManager
     public function inspector(string $key): DbInspector
     {
         return match ($this->driver($key)) {
-            'mysql'  => new MySqlInspector(),
-            'pgsql'  => new PgsqlInspector(),
-            'sqlite' => new SqliteInspector(),
-            default  => throw new InvalidConnectionException(
+            'mysql' => new MySqlInspector,
+            'pgsql' => new PgsqlInspector,
+            'sqlite' => new SqliteInspector,
+            default => throw new InvalidConnectionException(
                 "Unsupported database driver for connection key \"{$key}\"."
             ),
         };
@@ -95,4 +95,3 @@ class ConnectionManager
         return null;
     }
 }
-

@@ -48,27 +48,25 @@ class DbGovernorServiceProvider extends ServiceProvider
 
         View::composer('db-governor::*', function ($view) {
             $request = request();
-            $guard   = app(AccessGuard::class);
+            $guard = app(AccessGuard::class);
 
             try {
                 $guardEmail = $guard->email();
-                $guardRole  = $guard->role();
+                $guardRole = $guard->role();
             } catch (\Throwable) {
                 $guardEmail = null;
-                $guardRole  = null;
+                $guardRole = null;
             }
 
             $view->with([
-                'token'             => $request->route('token'),
+                'token' => $request->route('token'),
                 'currentConnection' => $request->route('connection'),
-                'tokenBaseUrl'      => $request->route('token')
+                'tokenBaseUrl' => $request->route('token')
                     ? url(config('db-governor.path', 'db-governor').'/'.$request->route('token'))
                     : null,
-                'guardEmail'        => $guardEmail,
-                'guardRole'         => $guardRole,
+                'guardEmail' => $guardEmail,
+                'guardRole' => $guardRole,
             ]);
         });
     }
 }
-
-

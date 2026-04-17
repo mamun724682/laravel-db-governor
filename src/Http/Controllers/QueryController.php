@@ -2,6 +2,7 @@
 
 namespace Mamun724682\DbGovernor\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -23,7 +24,7 @@ class QueryController
     public function index(Request $request, string $token, string $connection): View
     {
         $isAdmin = $this->guard->isAdmin();
-        $tab     = $request->input('tab', 'write');
+        $tab = $request->input('tab', 'write');
 
         $queryBuilder = GovernedQuery::where('connection', $connection);
 
@@ -67,17 +68,17 @@ class QueryController
         }
 
         if ($request->filled('date_from')) {
-            $queryBuilder->where('created_at', '>=', \Carbon\Carbon::parse($request->input('date_from'))->startOfDay());
+            $queryBuilder->where('created_at', '>=', Carbon::parse($request->input('date_from'))->startOfDay());
         }
 
         if ($request->filled('date_to')) {
-            $queryBuilder->where('created_at', '<=', \Carbon\Carbon::parse($request->input('date_to'))->endOfDay());
+            $queryBuilder->where('created_at', '<=', Carbon::parse($request->input('date_to'))->endOfDay());
         }
 
-        $queries           = $queryBuilder->latest()->simplePaginate(25)->withQueryString();
-        $tables            = $this->connectionManager->listTables($connection);
+        $queries = $queryBuilder->latest()->simplePaginate(25)->withQueryString();
+        $tables = $this->connectionManager->listTables($connection);
         $currentConnection = $connection;
-        $submitters        = $isAdmin
+        $submitters = $isAdmin
             ? array_values(array_unique(array_map('strtolower', array_merge(
                 config('db-governor.allowed.admins', []),
                 config('db-governor.allowed.employees', []),

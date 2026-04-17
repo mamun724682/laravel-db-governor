@@ -13,7 +13,7 @@ class DryRunEngine
         }
 
         try {
-            $conn      = $this->connectionManager->resolve($connectionKey);
+            $conn = $this->connectionManager->resolve($connectionKey);
             $inspector = $this->connectionManager->inspector($connectionKey);
 
             return $inspector->estimateAffectedRows($sql, $conn);
@@ -22,4 +22,3 @@ class DryRunEngine
         }
     }
 }
-

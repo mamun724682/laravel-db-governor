@@ -20,16 +20,16 @@ class RiskAnalyzer
 
     public function analyze(string $sql, string $connectionKey): RiskReport
     {
-        $flags   = [];
-        $level   = RiskLevel::Low;
+        $flags = [];
+        $level = RiskLevel::Low;
         $blocked = false;
 
         // 1. Check blocked patterns — if matched, stop all further processing
         foreach ($this->blockedPatterns as $pattern) {
             if (preg_match($pattern, $sql)) {
-                $flags[]  = "Blocked by pattern: {$pattern}";
-                $blocked  = true;
-                $level    = RiskLevel::Critical;
+                $flags[] = "Blocked by pattern: {$pattern}";
+                $blocked = true;
+                $level = RiskLevel::Critical;
 
                 return new RiskReport(
                     level: $level,
@@ -44,7 +44,7 @@ class RiskAnalyzer
         foreach ($this->flaggedPatterns as $pattern) {
             if (preg_match($pattern, $sql)) {
                 $flags[] = "Flagged by pattern: {$pattern}";
-                $level   = $level->escalateTo(RiskLevel::High);
+                $level = $level->escalateTo(RiskLevel::High);
             }
         }
 
@@ -53,7 +53,7 @@ class RiskAnalyzer
 
         if ($estimatedRows !== null && $estimatedRows > $this->maxAffectedRows) {
             $flags[] = "Estimated {$estimatedRows} affected rows exceeds limit of {$this->maxAffectedRows}";
-            $level   = $level->escalateTo(RiskLevel::High);
+            $level = $level->escalateTo(RiskLevel::High);
         }
 
         return new RiskReport(
@@ -64,4 +64,3 @@ class RiskAnalyzer
         );
     }
 }
-

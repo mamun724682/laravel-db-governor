@@ -39,4 +39,3 @@ class AuthController
             ->with('success', 'You have been logged out.');
     }
 }
-
