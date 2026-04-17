@@ -527,6 +527,20 @@
 
                 {{-- Query Builder Tab --}}
                 <div x-show="consoleTab === 'builder'" class="space-y-4">
+
+                    {{-- Query type selector --}}
+                    <div class="flex gap-2">
+                        @foreach(['SELECT','INSERT','UPDATE','DELETE'] as $qtype)
+                        <button
+                            type="button"
+                            @click="qbType = '{{ $qtype }}'"
+                            :class="qbType === '{{ $qtype }}' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                            class="rounded-lg px-3 py-1.5 text-xs font-semibold transition"
+                        >{{ $qtype }}</button>
+                        @endforeach
+                    </div>
+
+                    {{-- Table selector --}}
                     <div>
                         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Table</label>
                         <select
@@ -541,59 +555,134 @@
                         </select>
                     </div>
 
-                    <template x-if="qbColumns.length > 0">
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Columns (leave empty for *)</label>
-                            <div class="flex flex-wrap gap-2">
-                                <template x-for="col in qbColumns" :key="col.name">
-                                    <label class="inline-flex items-center gap-1 text-xs text-gray-700 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            :value="col.name"
-                                            x-model="qbSelectedColumns"
-                                            class="rounded border-gray-300 text-indigo-600"
-                                        >
-                                        <span x-text="col.name"></span>
-                                        <span class="text-gray-400 font-mono text-xs" x-text="col.type ? '(' + col.type + ')' : ''"></span>
-                                    </label>
-                                </template>
+                    {{-- SELECT: columns + WHERE + ORDER + LIMIT --}}
+                    <template x-if="qbType === 'SELECT'">
+                        <div class="space-y-3">
+                            <template x-if="qbColumns.length > 0">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Columns (leave empty for *)</label>
+                                    <div class="flex flex-wrap gap-2">
+                                        <template x-for="col in qbColumns" :key="col.name">
+                                            <label class="inline-flex items-center gap-1 text-xs text-gray-700 cursor-pointer">
+                                                <input type="checkbox" :value="col.name" x-model="qbSelectedColumns" class="rounded border-gray-300 text-indigo-600">
+                                                <span x-text="col.name"></span>
+                                                <span class="text-gray-400 font-mono text-xs" x-text="col.type ? '(' + col.type + ')' : ''"></span>
+                                            </label>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">WHERE column</label>
+                                    <input type="text" x-model="qbWhereCol" placeholder="e.g. id" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Operator</label>
+                                    <select x-model="qbWhereOp" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                        <option>=</option><option>!=</option><option>&gt;</option><option>&lt;</option><option>LIKE</option><option>IS NULL</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Value</label>
+                                    <input type="text" x-model="qbWhereVal" placeholder="value" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">ORDER BY</label>
+                                    <input type="text" x-model="qbOrderBy" placeholder="column" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Direction</label>
+                                    <select x-model="qbOrderDir" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                        <option>ASC</option><option>DESC</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">LIMIT</label>
+                                    <input type="number" x-model="qbLimit" min="1" max="1000" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                </div>
                             </div>
                         </div>
                     </template>
 
-                    <div class="grid grid-cols-3 gap-2">
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">WHERE column</label>
-                            <input type="text" x-model="qbWhereCol" placeholder="e.g. id" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    {{-- INSERT: col=val pairs --}}
+                    <template x-if="qbType === 'INSERT'">
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Values</label>
+                                <button type="button" @click="qbInsertRows.push({col:'',val:''})" class="text-xs text-indigo-600 hover:text-indigo-800">+ Add column</button>
+                            </div>
+                            <template x-for="(row, i) in qbInsertRows" :key="i">
+                                <div class="flex gap-2 items-center">
+                                    <input type="text" x-model="row.col" placeholder="column" class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                    <span class="text-gray-400 text-xs">=</span>
+                                    <input type="text" x-model="row.val" placeholder="value" class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                    <button type="button" @click="qbInsertRows.splice(i,1)" class="text-gray-400 hover:text-red-500 text-xs">✕</button>
+                                </div>
+                            </template>
                         </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Operator</label>
-                            <select x-model="qbWhereOp" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                <option>=</option><option>!=</option><option>&gt;</option><option>&lt;</option><option>LIKE</option><option>IS NULL</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Value</label>
-                            <input type="text" x-model="qbWhereVal" placeholder="value" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                        </div>
-                    </div>
+                    </template>
 
-                    <div class="grid grid-cols-3 gap-2">
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">ORDER BY</label>
-                            <input type="text" x-model="qbOrderBy" placeholder="column" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    {{-- UPDATE: SET col=val + WHERE --}}
+                    <template x-if="qbType === 'UPDATE'">
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">SET</label>
+                                <button type="button" @click="qbSetRows.push({col:'',val:''})" class="text-xs text-indigo-600 hover:text-indigo-800">+ Add column</button>
+                            </div>
+                            <template x-for="(row, i) in qbSetRows" :key="i">
+                                <div class="flex gap-2 items-center">
+                                    <input type="text" x-model="row.col" placeholder="column" class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                    <span class="text-gray-400 text-xs">=</span>
+                                    <input type="text" x-model="row.val" placeholder="value" class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                    <button type="button" @click="qbSetRows.splice(i,1)" class="text-gray-400 hover:text-red-500 text-xs">✕</button>
+                                </div>
+                            </template>
+                            <div class="grid grid-cols-3 gap-2 pt-1">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">WHERE column</label>
+                                    <input type="text" x-model="qbWhereCol" placeholder="e.g. id" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Operator</label>
+                                    <select x-model="qbWhereOp" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                        <option>=</option><option>!=</option><option>&gt;</option><option>&lt;</option><option>LIKE</option><option>IS NULL</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Value</label>
+                                    <input type="text" x-model="qbWhereVal" placeholder="value" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Direction</label>
-                            <select x-model="qbOrderDir" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                <option>ASC</option><option>DESC</option>
-                            </select>
+                    </template>
+
+                    {{-- DELETE: WHERE only --}}
+                    <template x-if="qbType === 'DELETE'">
+                        <div class="space-y-3">
+                            <div class="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+                                ⚠ DELETE without a WHERE will remove all rows. Specify a condition below.
+                            </div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">WHERE column</label>
+                                    <input type="text" x-model="qbWhereCol" placeholder="e.g. id" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Operator</label>
+                                    <select x-model="qbWhereOp" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                        <option>=</option><option>!=</option><option>&gt;</option><option>&lt;</option><option>LIKE</option><option>IS NULL</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Value</label>
+                                    <input type="text" x-model="qbWhereVal" placeholder="value" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">LIMIT</label>
-                            <input type="number" x-model="qbLimit" min="1" max="1000" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                        </div>
-                    </div>
+                    </template>
 
                     <button
                         type="button"
@@ -626,6 +715,7 @@ function sqlConsole() {
         writeModal: false,
         pendingWrite: null,
         qbTable: '',
+        qbType: 'SELECT',
         qbColumns: [],
         qbSelectedColumns: [],
         qbWhereCol: '',
@@ -633,7 +723,9 @@ function sqlConsole() {
         qbWhereVal: '',
         qbOrderBy: '',
         qbOrderDir: 'ASC',
-        qbLimit: 100,
+        qbLimit: 25,
+        qbInsertRows: [{col: '', val: ''}],
+        qbSetRows: [{col: '', val: ''}],
         sqlKeywords: ['SELECT','INSERT','UPDATE','DELETE','FROM','WHERE','JOIN','LEFT JOIN',
                       'INNER JOIN','RIGHT JOIN','ORDER BY','GROUP BY','HAVING','LIMIT',
                       'OFFSET','AND','OR','NOT','IN','LIKE','IS NULL','IS NOT NULL',
@@ -698,14 +790,35 @@ function sqlConsole() {
             } catch (e) {}
         },
         generateSql() {
-            const cols = this.qbSelectedColumns.length ? this.qbSelectedColumns.join(', ') : '*';
-            let q = 'SELECT ' + cols + ' FROM ' + this.qbTable;
-            if (this.qbWhereCol && this.qbWhereVal !== '') {
-                q += ' WHERE ' + this.qbWhereCol + ' ' + this.qbWhereOp + " '" + this.qbWhereVal + "'";
+            const esc = v => v.replace(/'/g, "''");
+            const whereClause = () => {
+                if (!this.qbWhereCol) return '';
+                if (this.qbWhereOp === 'IS NULL' || this.qbWhereOp === 'IS NOT NULL') {
+                    return ' WHERE ' + this.qbWhereCol + ' ' + this.qbWhereOp;
+                }
+                return ' WHERE ' + this.qbWhereCol + ' ' + this.qbWhereOp + " '" + esc(this.qbWhereVal) + "'";
+            };
+
+            if (this.qbType === 'SELECT') {
+                const cols = this.qbSelectedColumns.length ? this.qbSelectedColumns.join(', ') : '*';
+                let q = 'SELECT ' + cols + ' FROM ' + this.qbTable;
+                q += whereClause();
+                if (this.qbOrderBy) { q += ' ORDER BY ' + this.qbOrderBy + ' ' + this.qbOrderDir; }
+                if (this.qbLimit) { q += ' LIMIT ' + this.qbLimit; }
+                this.sql = q;
+            } else if (this.qbType === 'INSERT') {
+                const valid = this.qbInsertRows.filter(r => r.col.trim());
+                const cols = valid.map(r => r.col).join(', ');
+                const vals = valid.map(r => "'" + esc(r.val) + "'").join(', ');
+                this.sql = 'INSERT INTO ' + this.qbTable + ' (' + cols + ') VALUES (' + vals + ')';
+            } else if (this.qbType === 'UPDATE') {
+                const valid = this.qbSetRows.filter(r => r.col.trim());
+                const setParts = valid.map(r => r.col + " = '" + esc(r.val) + "'").join(', ');
+                this.sql = 'UPDATE ' + this.qbTable + ' SET ' + setParts + whereClause();
+            } else if (this.qbType === 'DELETE') {
+                this.sql = 'DELETE FROM ' + this.qbTable + whereClause();
             }
-            if (this.qbOrderBy) { q += ' ORDER BY ' + this.qbOrderBy + ' ' + this.qbOrderDir; }
-            if (this.qbLimit) { q += ' LIMIT ' + this.qbLimit; }
-            this.sql = q;
+
             this.consoleTab = 'raw';
         },
         async run() {
