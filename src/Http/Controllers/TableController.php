@@ -68,6 +68,7 @@ class TableController
             $sqlWithValues = $this->bindValuesIntoSql("SELECT * FROM {$quoted} {$where}", $bindings);
             GovernedQuery::create([
                 'connection' => $connection,
+                'query_table' => $table,
                 'name' => $this->nameFromFilterSql($table, $where, $bindings),
                 'sql_raw' => $sqlWithValues,
                 'query_type' => QueryType::Read->value,

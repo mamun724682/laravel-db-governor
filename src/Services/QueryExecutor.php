@@ -51,7 +51,7 @@ class QueryExecutor
             $rowsAffected = $conn->affectingStatement($query->sql_raw);
             $ms = (int) ((microtime(true) - $start) * 1000);
 
-            $query->update([
+            $updateData = [
                 'status' => QueryStatus::Executed->value,
                 'executed_by' => $this->guard->email(),
                 'executed_at' => now(),
@@ -59,10 +59,16 @@ class QueryExecutor
                 'execution_time_ms' => $ms,
                 'snapshot_strategy' => $snapshot?->strategy,
                 'snapshot_data' => $snapshot ? json_encode($snapshot->rows) : null,
-                'query_table' => $snapshot?->tableName,
                 'snapshot_primary_key' => $snapshot?->primaryKey,
                 'snapshot_size_bytes' => $snapshot ? strlen(json_encode($snapshot->rows) ?: '') : null,
-            ]);
+            ];
+
+            // Backfill query_table from snapshot when not already set during submission
+            if (empty($query->query_table) && $snapshot?->tableName) {
+                $updateData['query_table'] = $snapshot->tableName;
+            }
+
+            $query->update($updateData);
 
             return new QueryResult(success: true, rowsAffected: $rowsAffected, executionTimeMs: $ms);
         } catch (\Throwable $e) {

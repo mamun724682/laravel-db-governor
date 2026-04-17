@@ -57,6 +57,7 @@ class SqlController
             if ($result->success && config('db-governor.log_read_queries', true)) {
                 GovernedQuery::create([
                     'connection' => $connection,
+                    'query_table' => $this->classifier->extractTables($sql)[0] ?? null,
                     'name' => $this->nameFromSql($sql),
                     'sql_raw' => $sql,
                     'query_type' => QueryType::Read->value,

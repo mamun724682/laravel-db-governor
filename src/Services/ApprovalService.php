@@ -31,6 +31,7 @@ class ApprovalService
 
         $attributes = [
             'connection' => $dto->connection,
+            'query_table' => ($this->classifier->extractTables($dto->sql)[0] ?? null),
             'sql_raw' => $dto->sql,
             'query_type' => $type->value,
             'name' => $dto->name,
