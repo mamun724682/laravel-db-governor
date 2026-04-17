@@ -127,6 +127,7 @@
                         @if ($isAdmin)
                             <th class="px-4 py-2.5">Submitted by</th>
                         @endif
+                        <th class="px-4 py-2.5">Snapshot</th>
                         <th class="px-4 py-2.5">Date</th>
                         <th class="px-4 py-2.5"></th>
                     </tr>
@@ -156,6 +157,16 @@
                             @if ($isAdmin)
                                 <td class="px-4 py-3 text-xs text-gray-500">{{ $query->submitted_by }}</td>
                             @endif
+                            <td class="px-4 py-3 text-xs text-gray-500">
+                                @if ($query->snapshot_table)
+                                    <a href="{{ route('db-governor.table.show', ['token' => $token, 'connection' => $currentConnection, 'table' => $query->snapshot_table]) }}"
+                                       class="text-indigo-600 hover:text-indigo-800 hover:underline font-mono">
+                                        🗄 {{ $query->snapshot_table }}
+                                    </a>
+                                @else
+                                    <span class="text-gray-300">—</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-xs text-gray-400">{{ $query->created_at?->diffForHumans() }}</td>
                             <td class="px-4 py-3">
                                 <button
@@ -337,9 +348,27 @@
                                         <span class="text-gray-400">Rolled back at</span>
                                         <span x-text="modal.rolled_back_at || '—'"></span>
                                     </div>
+                                    <template x-if="modal.rollback_sql">
+                                        <div class="mt-3">
+                                            <p class="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-1">Rollback SQL</p>
+                                            <pre class="rounded-lg bg-purple-100 border border-purple-200 p-3 text-xs font-mono text-purple-800 overflow-x-auto whitespace-pre-wrap" x-text="modal.rollback_sql"></pre>
+                                        </div>
+                                    </template>
                                     <template x-if="modal.rollback_error">
                                         <p class="mt-2 text-red-600"><span class="font-medium">Error: </span><span x-text="modal.rollback_error"></span></p>
                                     </template>
+                                </div>
+                            </template>
+
+                            {{-- Snapshot data --}}
+                            <template x-if="modal.snapshot_data">
+                                <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 text-xs">
+                                    <p class="font-semibold text-gray-500 uppercase tracking-wider mb-2">Snapshot Data
+                                        <template x-if="modal.snapshot_table">
+                                            <span class="normal-case font-normal text-gray-400 ml-1">— <span x-text="modal.snapshot_table"></span></span>
+                                        </template>
+                                    </p>
+                                    <pre class="rounded-lg bg-white border border-gray-200 p-3 text-xs font-mono text-gray-700 overflow-x-auto max-h-48 whitespace-pre-wrap" x-text="typeof modal.snapshot_data === 'string' ? modal.snapshot_data : JSON.stringify(modal.snapshot_data, null, 2)"></pre>
                                 </div>
                             </template>
 
@@ -429,16 +458,16 @@
             <div class="flex gap-1 px-6 pt-4 border-b border-gray-100 flex-shrink-0">
                 <button
                     type="button"
-                    @click="consoleTab = 'raw'"
-                    :class="consoleTab === 'raw' ? 'border-b-2 border-indigo-600 text-indigo-700 font-semibold' : 'text-gray-500 hover:text-gray-700'"
-                    class="px-4 py-2 text-sm -mb-px transition"
-                >Raw SQL</button>
-                <button
-                    type="button"
                     @click="consoleTab = 'builder'"
                     :class="consoleTab === 'builder' ? 'border-b-2 border-indigo-600 text-indigo-700 font-semibold' : 'text-gray-500 hover:text-gray-700'"
                     class="px-4 py-2 text-sm -mb-px transition"
                 >Query Builder</button>
+                <button
+                    type="button"
+                    @click="consoleTab = 'raw'"
+                    :class="consoleTab === 'raw' ? 'border-b-2 border-indigo-600 text-indigo-700 font-semibold' : 'text-gray-500 hover:text-gray-700'"
+                    class="px-4 py-2 text-sm -mb-px transition"
+                >Raw SQL</button>
             </div>
 
             {{-- Scrollable body --}}
@@ -707,7 +736,7 @@
 <script>
 function sqlConsole() {
     return {
-        consoleTab: 'raw',
+        consoleTab: 'builder',
         sql: '',
         loading: false,
         result: null,
