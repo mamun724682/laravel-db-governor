@@ -51,6 +51,18 @@
 
         {{-- Main content --}}
         <main class="flex-1 overflow-y-auto p-6">
+            @if (session('error'))
+                <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm flex items-start gap-2">
+                    <span class="font-bold flex-shrink-0">⚠</span>
+                    <span>{{ session('error') }}</span>
+                </div>
+            @endif
+            @if (session('success'))
+                <div class="mb-4 rounded-lg bg-green-50 border border-green-200 text-green-700 px-4 py-3 text-sm flex items-start gap-2">
+                    <span class="font-bold flex-shrink-0">✓</span>
+                    <span>{{ session('success') }}</span>
+                </div>
+            @endif
             @yield('content')
         </main>
     </div>

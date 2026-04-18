@@ -26,6 +26,12 @@ class ApprovalService
             throw new QueryBlockedException(["Access to table \"{$hiddenTable}\" is restricted."]);
         }
 
+        // Pre-validate: for UPDATE/DELETE with WHERE, ensure at least one row would be affected
+        $preCheckError = $this->preCheckWhereRows($dto->sql, $dto->connection);
+        if ($preCheckError !== null) {
+            throw new \InvalidArgumentException($preCheckError);
+        }
+
         $type = $this->classifier->classify($dto->sql);
         $risk = $this->analyzer->analyze($dto->sql, $dto->connection);
 
@@ -98,5 +104,57 @@ class ApprovalService
         $query = GovernedQuery::findOrFail($uuid);
 
         return $this->rollbackService->rollback($query);
+    }
+
+    /**
+     * For UPDATE/DELETE with a WHERE clause, verify at least one row would be affected.
+     * Returns an error message string if validation fails, null otherwise.
+     */
+    private function preCheckWhereRows(string $sql, string $connectionKey): ?string
+    {
+        $verb = strtoupper(trim(strtok($sql, " \t\n\r") ?: ''));
+
+        if (! in_array($verb, ['UPDATE', 'DELETE'], true)) {
+            return null;
+        }
+
+        if (! preg_match('/\bWHERE\b/i', $sql)) {
+            return null;
+        }
+
+        if ($verb === 'UPDATE') {
+            if (! preg_match('/UPDATE\s+[`"]?(\w+)[`"]?\s+SET/i', $sql, $m)) {
+                return null;
+            }
+        } else {
+            if (! preg_match('/DELETE\s+FROM\s+[`"]?(\w+)[`"]?/i', $sql, $m)) {
+                return null;
+            }
+        }
+
+        $table = $m[1];
+
+        if (! preg_match('/\bWHERE\b(.+?)(?:\b(?:ORDER\s+BY|LIMIT|GROUP\s+BY|HAVING)\b|$)/is', $sql, $wm)) {
+            return null;
+        }
+
+        $where = trim($wm[1]);
+
+        try {
+            $conn = $this->connectionManager->resolve($connectionKey);
+            $q = $conn->getDriverName() === 'mysql' ? '`' : '"';
+            $row = $conn->selectOne("SELECT COUNT(*) as cnt FROM {$q}{$table}{$q} WHERE {$where}");
+            $count = (int) ($row->cnt ?? $row->CNT ?? 0);
+
+            if ($count === 0) {
+                return "Query rejected: no rows match the WHERE condition in table \"{$table}\". "
+                    .'Verify your filter values and resubmit.';
+            }
+        } catch (\Throwable) {
+            // Complex sub-queries or syntax issues — let risk analysis handle it
+            return null;
+        }
+
+        return null;
     }
 }

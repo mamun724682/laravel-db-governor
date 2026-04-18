@@ -109,6 +109,8 @@ class QueryController
             ));
         } catch (QueryBlockedException $e) {
             return redirect()->back()->with('error', 'Query was blocked: '.$e->getMessage());
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
 
         return redirect()->back()->with('success', 'Query submitted for review.');
