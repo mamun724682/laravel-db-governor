@@ -648,7 +648,7 @@
                                             <select x-model="row.col" class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                                                 <option value="">— column —</option>
                                                 <template x-for="col in qbColumns" :key="col.name">
-                                                    <option :value="col.name" x-text="col.name + (col.type ? ' (' + col.type + ')' : '')"></option>
+                                                    <option :value="col.name" :selected="row.col === col.name" x-text="col.name + (col.type ? ' (' + col.type + ')' : '')"></option>
                                                 </template>
                                             </select>
                                             <span class="text-gray-400 text-xs">=</span>
