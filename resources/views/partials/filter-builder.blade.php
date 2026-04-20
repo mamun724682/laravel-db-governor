@@ -1,6 +1,7 @@
 <div
     x-data="{
         groups: {{ Js::from($filterGroups) }},
+        columns: {{ Js::from($columns) }},
         addAnd(groupIdx) {
             this.groups[groupIdx].filters.push({ col: '', op: '=', val: '' });
         },
@@ -12,6 +13,20 @@
             if (this.groups[groupIdx].filters.length === 0) {
                 this.groups.splice(groupIdx, 1);
             }
+        },
+        colTypeByName(name) {
+            const col = this.columns.find(c => c.name === name);
+            return col ? (col.type || '') : '';
+        },
+        inputTypeFor(type) {
+            const t = (type || '').toLowerCase();
+            if (/timestamp|datetime/.test(t)) return 'datetime-local';
+            if (/\bdate\b/.test(t)) return 'date';
+            if (/\btime\b/.test(t)) return 'time';
+            return 'text';
+        },
+        isJsonCol(type) {
+            return /json/i.test(type || '');
         },
     }"
     class="rounded-xl bg-white border border-gray-100 shadow p-4 mb-6"
@@ -74,15 +89,29 @@
                                 @endforeach
                             </select>
 
-                            {{-- Value --}}
-                            <input
-                                type="text"
-                                x-model="f.val"
-                                :name="`f[${gi}][${fi}][val]`"
-                                x-show="!['IS NULL','IS NOT NULL'].includes(f.op)"
-                                placeholder="value"
-                                class="rounded border border-gray-300 text-xs px-2 py-1.5 w-36 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                            >
+                                            {{-- Value --}}
+                                            <template x-if="!['IS NULL','IS NOT NULL'].includes(f.op) && isJsonCol(colTypeByName(f.col))">
+                                                <textarea
+                                                    x-model="f.val"
+                                                    :name="`f[${gi}][${fi}][val]`"
+                                                    placeholder="JSON value"
+                                                    rows="2"
+                                                    class="rounded border border-gray-300 text-xs px-2 py-1.5 w-48 font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-y"
+                                                ></textarea>
+                                            </template>
+                                            <template x-if="!['IS NULL','IS NOT NULL'].includes(f.op) && !isJsonCol(colTypeByName(f.col))">
+                                                <input
+                                                    :type="inputTypeFor(colTypeByName(f.col))"
+                                                    x-model="f.val"
+                                                    :name="`f[${gi}][${fi}][val]`"
+                                                    placeholder="value"
+                                                    class="rounded border border-gray-300 text-xs px-2 py-1.5 w-36 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                >
+                                            </template>
+                                            {{-- Hidden field to keep name binding when IS NULL/IS NOT NULL --}}
+                                            <template x-if="['IS NULL','IS NOT NULL'].includes(f.op)">
+                                                <input type="hidden" :name="`f[${gi}][${fi}][val]`" value="">
+                                            </template>
 
                             {{-- Remove --}}
                             <button

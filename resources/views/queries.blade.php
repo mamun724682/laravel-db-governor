@@ -641,12 +641,20 @@
                                 <div class="space-y-2">
                                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Values</label>
                                     <template x-for="(col, i) in qbColumns" :key="col.name">
-                                        <div class="flex gap-3 items-center">
-                                            <span class="w-36 text-xs font-mono text-gray-700 truncate flex-shrink-0" x-text="col.name + (col.type ? ' (' + col.type + ')' : '')"></span>
-                                            <span class="text-gray-300 text-xs">=</span>
-                                            <input type="text" :placeholder="col.type || 'value'"
-                                                x-model="qbInsertRows[i].val"
-                                                class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                        <div class="flex gap-3 items-start">
+                                            <span class="w-36 text-xs font-mono text-gray-700 truncate flex-shrink-0 pt-1.5" x-text="col.name + (col.type ? ' (' + col.type + ')' : '')"></span>
+                                            <span class="text-gray-300 text-xs pt-1.5">=</span>
+                                            <template x-if="isJsonCol(col.type)">
+                                                <textarea :placeholder="col.type || 'value'"
+                                                    x-model="qbInsertRows[i].val"
+                                                    rows="2"
+                                                    class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-y"></textarea>
+                                            </template>
+                                            <template x-if="!isJsonCol(col.type)">
+                                                <input :type="inputTypeFor(col.type)" :placeholder="col.type || 'value'"
+                                                    x-model="qbInsertRows[i].val"
+                                                    class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                            </template>
                                         </div>
                                     </template>
                                 </div>
@@ -670,7 +678,12 @@
                                         </template>
                                     </select>
                                     <span class="text-gray-400 text-xs">=</span>
-                                    <input type="text" x-model="row.val" placeholder="value" class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                    <template x-if="isJsonCol(colTypeByName(row.col))">
+                                        <textarea x-model="row.val" placeholder="JSON value" rows="2" class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-y"></textarea>
+                                    </template>
+                                    <template x-if="!isJsonCol(colTypeByName(row.col))">
+                                        <input :type="inputTypeFor(colTypeByName(row.col))" x-model="row.val" placeholder="value" class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                    </template>
                                     <button type="button" @click="qbSetRows.splice(i,1)" class="text-gray-400 hover:text-red-500 text-xs">✕</button>
                                 </div>
                             </template>
@@ -691,14 +704,14 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Value</label>
-                                    <input type="text" x-model="qbWhereVal" placeholder="value" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                </div>
-                            </div>
-                        </div>
-                    </template>
+                                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Value</label>
+                                     <input :type="inputTypeFor(colTypeByName(qbWhereCol))" x-model="qbWhereVal" placeholder="value" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                 </div>
+                             </div>
+                         </div>
+                     </template>
 
-                    {{-- DELETE: WHERE col (select) --}}
+                     {{-- DELETE: WHERE col (select) --}}
                     <template x-if="qbType === 'DELETE'">
                         <div class="space-y-3">
                             <div class="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
@@ -721,14 +734,14 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Value</label>
-                                    <input type="text" x-model="qbWhereVal" placeholder="value" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                </div>
-                            </div>
-                        </div>
-                    </template>
+                                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Value</label>
+                                     <input :type="inputTypeFor(colTypeByName(qbWhereCol))" x-model="qbWhereVal" placeholder="value" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                 </div>
+                             </div>
+                         </div>
+                     </template>
 
-                    <button
+                     <button
                         type="button"
                         @click="generateSql()"
                         :disabled="!qbTable"
@@ -780,6 +793,20 @@ function sqlConsole() {
         autocompleteIndex: -1,
         get columnNames() {
             return this.qbColumns.map(c => c.name);
+        },
+        inputTypeFor(type) {
+            const t = (type || '').toLowerCase();
+            if (/timestamp|datetime/.test(t)) return 'datetime-local';
+            if (/\bdate\b/.test(t)) return 'date';
+            if (/\btime\b/.test(t)) return 'time';
+            return 'text';
+        },
+        isJsonCol(type) {
+            return /json/i.test(type || '');
+        },
+        colTypeByName(name) {
+            const col = this.qbColumns.find(c => c.name === name);
+            return col ? col.type : '';
         },
         autocomplete(value) {
             const match = value.match(/[\w.]+$/);
@@ -838,13 +865,22 @@ function sqlConsole() {
             } catch (e) {}
         },
         generateSql() {
-            const esc = v => v.replace(/'/g, "''");
+            const esc = v => String(v).replace(/'/g, "''");
+            const fmtVal = (val, type) => {
+                const t = (type || '').toLowerCase();
+                if (/timestamp|datetime/.test(t) && val && val.includes('T')) {
+                    return val.replace('T', ' ');
+                }
+                return val;
+            };
             const whereClause = () => {
                 if (!this.qbWhereCol) return '';
                 if (this.qbWhereOp === 'IS NULL' || this.qbWhereOp === 'IS NOT NULL') {
                     return ' WHERE ' + this.qbWhereCol + ' ' + this.qbWhereOp;
                 }
-                return ' WHERE ' + this.qbWhereCol + ' ' + this.qbWhereOp + " '" + esc(this.qbWhereVal) + "'";
+                const type = this.colTypeByName(this.qbWhereCol);
+                const val = fmtVal(this.qbWhereVal, type);
+                return ' WHERE ' + this.qbWhereCol + ' ' + this.qbWhereOp + " '" + esc(val) + "'";
             };
 
             if (this.qbType === 'SELECT') {
@@ -857,11 +893,17 @@ function sqlConsole() {
             } else if (this.qbType === 'INSERT') {
                 const valid = this.qbInsertRows.filter(r => r.col.trim());
                 const cols = valid.map(r => r.col).join(', ');
-                const vals = valid.map(r => "'" + esc(r.val) + "'").join(', ');
+                const vals = valid.map(r => {
+                    const col = this.qbColumns.find(c => c.name === r.col);
+                    return "'" + esc(fmtVal(r.val, col ? col.type : '')) + "'";
+                }).join(', ');
                 this.sql = 'INSERT INTO ' + this.qbTable + ' (' + cols + ') VALUES (' + vals + ')';
             } else if (this.qbType === 'UPDATE') {
                 const valid = this.qbSetRows.filter(r => r.col.trim());
-                const setParts = valid.map(r => r.col + " = '" + esc(r.val) + "'").join(', ');
+                const setParts = valid.map(r => {
+                    const col = this.qbColumns.find(c => c.name === r.col);
+                    return r.col + " = '" + esc(fmtVal(r.val, col ? col.type : '')) + "'";
+                }).join(', ');
                 this.sql = 'UPDATE ' + this.qbTable + ' SET ' + setParts + whereClause();
             } else if (this.qbType === 'DELETE') {
                 this.sql = 'DELETE FROM ' + this.qbTable + whereClause();
