@@ -46,6 +46,9 @@ class SqliteInspector implements DbInspector
         return array_map(fn ($row) => [
             'name' => $row->name,
             'type' => $row->type,
+            'required' => (int) $row->notnull === 1
+                && $row->dflt_value === null
+                && (int) $row->pk === 0,
         ], $rows);
     }
 

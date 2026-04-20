@@ -46,6 +46,9 @@ class MySqlInspector implements DbInspector
         return array_map(fn ($row) => [
             'name' => $row->Field,
             'type' => $row->Type,
+            'required' => $row->Null === 'NO'
+                && $row->Default === null
+                && ! str_contains(strtolower((string) $row->Extra), 'auto_increment'),
         ], $rows);
     }
 

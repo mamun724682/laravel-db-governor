@@ -639,12 +639,22 @@
                                     </div>
                                     <template x-for="(row, i) in qbInsertRows" :key="i">
                                         <div class="flex gap-2 items-center">
-                                            <select x-model="row.col" class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                                <option value="">— column —</option>
-                                                <template x-for="col in qbColumns" :key="col.name">
-                                                    <option :value="col.name" :selected="row.col === col.name" x-text="col.name + (col.type ? ' (' + col.type + ')' : '')"></option>
+                                            <div class="flex-1 relative">
+                                                <select
+                                                    x-model="row.col"
+                                                    :disabled="row.required"
+                                                    :class="row.required ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''"
+                                                    class="w-full rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                >
+                                                    <option value="">— column —</option>
+                                                    <template x-for="col in qbColumns" :key="col.name">
+                                                        <option :value="col.name" :selected="row.col === col.name" x-text="col.name + (col.type ? ' (' + col.type + ')' : '')"></option>
+                                                    </template>
+                                                </select>
+                                                <template x-if="row.required">
+                                                    <span class="absolute right-7 top-1/2 -translate-y-1/2 text-red-500 font-bold text-xs pointer-events-none">*</span>
                                                 </template>
-                                            </select>
+                                            </div>
                                             <span class="text-gray-400 text-xs">=</span>
                                             <template x-if="isJsonCol(colTypeByName(row.col))">
                                                 <textarea x-model="row.val" placeholder="JSON value" rows="2" class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-y"></textarea>
@@ -652,7 +662,14 @@
                                             <template x-if="!isJsonCol(colTypeByName(row.col))">
                                                 <input :type="inputTypeFor(colTypeByName(row.col))" x-model="row.val" placeholder="value" class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                                             </template>
-                                            <button type="button" @click="qbInsertRows.splice(i,1)" class="text-gray-400 hover:text-red-500 text-xs">✕</button>
+                                            <button
+                                                type="button"
+                                                @click="!row.required && qbInsertRows.splice(i,1)"
+                                                :disabled="row.required"
+                                                :class="row.required ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-red-500'"
+                                                class="text-xs flex-shrink-0"
+                                                :title="row.required ? 'Required field — cannot be removed' : 'Remove'"
+                                            >✕</button>
                                         </div>
                                     </template>
                                 </div>
@@ -859,7 +876,9 @@ function sqlConsole() {
                 const res = await fetch('{{ route('db-governor.schema.table', ['token' => $token, 'connection' => $currentConnection, 'table' => '__TABLE__']) }}'.replace('__TABLE__', tbl));
                 const data = await res.json();
                 this.qbColumns = data.columns || [];
-                this.qbInsertRows = this.qbColumns.filter(c => c.name !== 'id').map(c => ({col: c.name, val: ''}));
+                this.qbInsertRows = this.qbColumns
+                    .filter(c => c.name !== 'id')
+                    .map(c => ({ col: c.name, val: '', required: c.required ?? false }));
             } catch (e) {}
         },
         generateSql() {

@@ -56,7 +56,7 @@ class PgsqlInspector implements DbInspector
     public function listColumns(string $table, Connection $conn): array
     {
         $rows = $conn->select(
-            "SELECT column_name, data_type
+            "SELECT column_name, data_type, is_nullable, column_default
              FROM information_schema.columns
              WHERE table_name   = ?
                AND table_schema = 'public'
@@ -67,6 +67,8 @@ class PgsqlInspector implements DbInspector
         return array_map(fn ($row) => [
             'name' => $row->column_name,
             'type' => $row->data_type,
+            'required' => $row->is_nullable === 'NO'
+                && $row->column_default === null,
         ], $rows);
     }
 
