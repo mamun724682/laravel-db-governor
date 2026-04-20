@@ -1,8 +1,14 @@
 {
     "name": "mamun724682/laravel-db-governor",
-    "description": "Production-safety database governance layer for Laravel",
-    "keywords": ["laravel", "database", "governance", "query-approval", "audit", "security"],
+    "description": "Safe production database access for Laravel with query approvals, audit logs, and rollback.",
+    "keywords": ["laravel", "database", "sql", "query-approval", "audit-log", "rollback", "production", "db-access", "query-monitoring", "governor"],
     "license": "MIT",
+    "authors": [
+        {
+            "name": "Abdullah Al Mamun",
+            "email": "mamun167359@gmail.com"
+        }
+    ],
     "homepage": "https://github.com/mamun724682/laravel-db-governor",
     "type": "library",
     "require": {
