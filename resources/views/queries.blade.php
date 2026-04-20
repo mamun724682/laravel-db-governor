@@ -352,12 +352,6 @@
                                         <span class="text-gray-400">Rolled back at</span>
                                         <span x-text="modal.rolled_back_at || '—'"></span>
                                     </div>
-                                    <template x-if="modal.rollback_sql">
-                                        <div class="mt-3">
-                                            <p class="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-1">Rollback SQL</p>
-                                            <pre class="rounded-lg bg-purple-100 border border-purple-200 p-3 text-xs font-mono text-purple-800 overflow-x-auto whitespace-pre-wrap" x-text="modal.rollback_sql"></pre>
-                                        </div>
-                                    </template>
                                     <template x-if="modal.rollback_error">
                                         <p class="mt-2 text-red-600"><span class="font-medium">Error: </span><span x-text="modal.rollback_error"></span></p>
                                     </template>

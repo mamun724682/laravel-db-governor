@@ -3,6 +3,7 @@
 namespace Mamun724682\DbGovernor\Services;
 
 use Illuminate\Database\Connection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Mamun724682\DbGovernor\Drivers\DbInspector;
 use Mamun724682\DbGovernor\Drivers\MySqlInspector;
@@ -65,12 +66,19 @@ class ConnectionManager
 
     /**
      * List tables for a connection, excluding any configured in hidden_tables.
+     * Results are cached for 5 minutes.
      *
      * @return array<int, string>
      */
     public function listTables(string $key): array
     {
-        $tables = $this->inspector($key)->listTables($this->resolve($key));
+        $ttl = config('db-governor.schema_cache_ttl', 300);
+        $cacheKey = "db-governor.tables.{$key}";
+
+        $tables = Cache::remember($cacheKey, $ttl, function () use ($key): array {
+            return $this->inspector($key)->listTables($this->resolve($key));
+        });
+
         $hidden = config('db-governor.hidden_tables', []);
 
         return array_values(array_filter(

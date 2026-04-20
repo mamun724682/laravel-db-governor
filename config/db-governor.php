@@ -42,6 +42,10 @@ return [
     'max_affected_rows' => env('DB_GOVERNOR_MAX_ROWS', 1000),
     'dry_run_enabled'   => env('DB_GOVERNOR_DRY_RUN', true),
 
+    // Cache TTL in seconds for schema introspection (table list, column list).
+    // Set to 0 to disable caching.
+    'schema_cache_ttl' => env('DB_GOVERNOR_SCHEMA_CACHE_TTL', 300),
+
     // 'row_snapshot' | 'generated_sql' | 'none'
     'rollback_strategy' => env('DB_GOVERNOR_ROLLBACK', 'row_snapshot'),
     'snapshot_max_rows' => env('DB_GOVERNOR_SNAPSHOT_MAX', 500),
