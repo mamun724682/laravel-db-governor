@@ -1,4 +1,4 @@
-<nav class="p-4 flex flex-col h-full">
+<nav class="p-4 flex flex-col h-full" @click.stop>
     <div class="flex-1">
         <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">Navigation</p>
 

@@ -58,7 +58,7 @@
 
                 <div class="space-y-2">
                     <template x-for="(f, fi) in group.filters" :key="fi">
-                        <div class="flex items-center gap-2 flex-wrap">
+                        <div class="flex items-start sm:items-center gap-2 flex-wrap sm:flex-nowrap">
                             <template x-if="fi > 0">
                                 <span class="text-xs font-bold text-indigo-500 uppercase w-8 text-center">AND</span>
                             </template>
@@ -70,7 +70,7 @@
                             <select
                                 x-model="f.col"
                                 :name="`f[${gi}][${fi}][col]`"
-                                class="rounded border border-gray-300 text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                class="flex-1 min-w-[120px] rounded border border-gray-300 text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                             >
                                 <option value="">— column —</option>
                                 @foreach ($columns as $col)

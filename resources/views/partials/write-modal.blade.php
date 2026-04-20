@@ -6,7 +6,7 @@
     @keydown.escape.window="writeModal = false"
     style="display: none;"
 >
-    <div class="w-full max-w-lg rounded-2xl bg-white shadow-xl p-6" @click.stop>
+    <div class="w-full max-w-lg mx-4 rounded-2xl bg-white shadow-xl p-6" @click.stop>
 
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-base font-semibold text-gray-800">Submit Write Query for Approval</h3>

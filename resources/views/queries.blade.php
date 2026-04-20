@@ -21,7 +21,7 @@
 @section('content')
     <div x-data="{ consoleOpen: false }">
 
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center justify-between mb-4 gap-3 flex-wrap">
         <h1 class="text-lg font-bold text-gray-800">📋 Query Log</h1>
         <button
             type="button"
@@ -44,18 +44,18 @@
     </div>
 
     {{-- Filters --}}
-    <form method="GET" class="flex flex-wrap items-center gap-3 mb-6 bg-white rounded-xl border border-gray-100 shadow px-4 py-3">
+    <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-3 mb-6 bg-white rounded-xl border border-gray-100 shadow px-4 py-3">
         <input type="hidden" name="token" value="{{ $token }}">
         <input type="hidden" name="connection" value="{{ $currentConnection }}">
 
-        <select name="status" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+        <select name="status" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full lg:w-auto focus:outline-none focus:ring-1 focus:ring-indigo-500">
             <option value="">All statuses</option>
             @foreach (['pending','approved','executed','rejected','rolled_back','blocked'] as $s)
                 <option value="{{ $s }}" {{ request('status') === $s ? 'selected' : '' }}>{{ ucfirst(str_replace('_', ' ', $s)) }}</option>
             @endforeach
         </select>
 
-        <select name="query_type" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+        <select name="query_type" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full lg:w-auto focus:outline-none focus:ring-1 focus:ring-indigo-500">
             <option value="">All types</option>
             @foreach (['read','write','ddl','unknown'] as $t)
                 <option value="{{ $t }}" {{ request('query_type') === $t ? 'selected' : '' }}>{{ strtoupper($t) }}</option>
@@ -67,7 +67,7 @@
             name="keyword"
             value="{{ request('keyword', request('search')) }}"
             placeholder="Search name, SQL or description…"
-            class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-56 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full sm:col-span-2 lg:w-56 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         >
 
         <input
@@ -188,7 +188,7 @@
             @keydown.escape.window="modal = null"
             style="display: none;"
         >
-            <div class="w-full max-w-2xl rounded-2xl bg-white shadow-xl flex flex-col max-h-[90vh]" @click.stop>
+            <div class="w-full max-w-2xl mx-4 rounded-2xl bg-white shadow-xl flex flex-col max-h-[90vh]" @click.stop>
                 <template x-if="modal">
                     <div class="flex flex-col min-h-0">
 
@@ -432,7 +432,7 @@
         style="display: none;"
         data-endpoint="db-governor.sql.execute"
     >
-        <div class="w-full max-w-3xl rounded-2xl bg-white shadow-xl flex flex-col max-h-[90vh]" @click.stop x-data="sqlConsole()">
+        <div class="w-full max-w-3xl mx-4 rounded-2xl bg-white shadow-xl flex flex-col max-h-[90vh]" @click.stop x-data="sqlConsole()">
 
             {{-- Console header --}}
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
@@ -587,23 +587,23 @@
                                     </div>
                                 </div>
                             </template>
-                            <div class="grid grid-cols-3 gap-2">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                 <div>
-                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">WHERE column</label>
-                                    <input type="text" x-model="qbWhereCol" placeholder="e.g. id" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Operator</label>
-                                    <select x-model="qbWhereOp" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                        <option>=</option><option>!=</option><option>&gt;</option><option>&lt;</option><option>LIKE</option><option>IS NULL</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Value</label>
-                                    <input type="text" x-model="qbWhereVal" placeholder="value" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-3 gap-2">
+                                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">WHERE column</label>
+                                     <input type="text" x-model="qbWhereCol" placeholder="e.g. id" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                 </div>
+                                 <div>
+                                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Operator</label>
+                                     <select x-model="qbWhereOp" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                         <option>=</option><option>!=</option><option>&gt;</option><option>&lt;</option><option>LIKE</option><option>IS NULL</option>
+                                     </select>
+                                 </div>
+                                 <div>
+                                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Value</label>
+                                     <input type="text" x-model="qbWhereVal" placeholder="value" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                 </div>
+                             </div>
+                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                 <div>
                                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">ORDER BY</label>
                                     <input type="text" x-model="qbOrderBy" placeholder="column" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
@@ -702,7 +702,7 @@
                                     <button type="button" @click="qbSetRows.splice(i,1)" class="text-gray-400 hover:text-red-500 text-xs">✕</button>
                                 </div>
                             </template>
-                            <div class="grid grid-cols-3 gap-2 pt-1">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
                                 <div>
                                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">WHERE column</label>
                                     <select x-model="qbWhereCol" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">
@@ -732,7 +732,7 @@
                             <div class="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
                                 ⚠ DELETE without a WHERE will remove all rows. Specify a condition below.
                             </div>
-                            <div class="grid grid-cols-3 gap-2">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                 <div>
                                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">WHERE column</label>
                                     <select x-model="qbWhereCol" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500">

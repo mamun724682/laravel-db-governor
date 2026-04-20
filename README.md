@@ -293,11 +293,13 @@ composer lint
 composer lint:fix
 ```
 
----
+[//]: # (---)
 
-## Changelog
+[//]: # ()
+[//]: # (## Changelog)
 
-See [CHANGELOG.md](CHANGELOG.md) for recent changes.
+[//]: # ()
+[//]: # (See [CHANGELOG.md]&#40;CHANGELOG.md&#41; for recent changes.)
 
 ---
 
