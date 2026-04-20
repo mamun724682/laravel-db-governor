@@ -74,7 +74,7 @@ class QueryExecutor
         } catch (\Throwable $e) {
             $query->update(['execution_error' => $e->getMessage()]);
 
-            return new QueryResult(success: false, error: $e->getMessage());
+            throw $e;
         }
     }
 }
