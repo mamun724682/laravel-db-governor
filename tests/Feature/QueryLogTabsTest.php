@@ -1,51 +1,52 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mamun724682\DbGovernor\Enums\QueryStatus;
 use Mamun724682\DbGovernor\Models\GovernedQuery;
 use Mamun724682\DbGovernor\Services\AccessGuard;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     config([
         'db-governor.allowed.admins' => ['admin@test.com'],
-        'db-governor.connections'    => ['main' => 'sqlite'],
-        'db-governor.path'           => 'db-governor',
+        'db-governor.connections' => ['main' => 'sqlite'],
+        'db-governor.path' => 'db-governor',
     ]);
 
     // One write query
     GovernedQuery::create([
-        'connection'   => 'main',
-        'sql_raw'      => 'UPDATE users SET active=0 WHERE id=1',
-        'query_type'   => 'write',
-        'risk_level'   => 'low',
-        'status'       => QueryStatus::Pending->value,
+        'connection' => 'main',
+        'sql_raw' => 'UPDATE users SET active=0 WHERE id=1',
+        'query_type' => 'write',
+        'risk_level' => 'low',
+        'status' => QueryStatus::Pending->value,
         'submitted_by' => 'dev@test.com',
     ]);
 
     // One DDL query
     GovernedQuery::create([
-        'connection'   => 'main',
-        'sql_raw'      => 'ALTER TABLE users ADD COLUMN bio TEXT',
-        'query_type'   => 'ddl',
-        'risk_level'   => 'low',
-        'status'       => QueryStatus::Pending->value,
+        'connection' => 'main',
+        'sql_raw' => 'ALTER TABLE users ADD COLUMN bio TEXT',
+        'query_type' => 'ddl',
+        'risk_level' => 'low',
+        'status' => QueryStatus::Pending->value,
         'submitted_by' => 'dev@test.com',
     ]);
 
     // One read query (audit log)
     GovernedQuery::create([
-        'connection'   => 'main',
-        'sql_raw'      => 'SELECT * FROM users',
-        'query_type'   => 'read',
-        'risk_level'   => 'low',
-        'status'       => QueryStatus::Executed->value,
+        'connection' => 'main',
+        'sql_raw' => 'SELECT * FROM users',
+        'query_type' => 'read',
+        'risk_level' => 'low',
+        'status' => QueryStatus::Executed->value,
         'submitted_by' => 'dev@test.com',
-        'executed_by'  => 'dev@test.com',
-        'executed_at'  => now(),
+        'executed_by' => 'dev@test.com',
+        'executed_at' => now(),
     ]);
 
-    $guard       = app(AccessGuard::class);
+    $guard = app(AccessGuard::class);
     $this->token = $guard->login('admin@test.com');
     $guard->setPayload($guard->validateToken($this->token));
 });
@@ -54,7 +55,7 @@ beforeEach(function () {
 
 it('default tab shows only write and ddl queries (not read)', function () {
     $queries = $this->get(route('db-governor.queries', [
-        'token'      => $this->token,
+        'token' => $this->token,
         'connection' => 'main',
     ]))->assertOk()->viewData('queries');
 
@@ -65,9 +66,9 @@ it('default tab shows only write and ddl queries (not read)', function () {
 
 it('?tab=write shows only write and ddl queries', function () {
     $queries = $this->get(route('db-governor.queries', [
-        'token'      => $this->token,
+        'token' => $this->token,
         'connection' => 'main',
-        'tab'        => 'write',
+        'tab' => 'write',
     ]))->assertOk()->viewData('queries');
 
     foreach ($queries as $q) {
@@ -78,9 +79,9 @@ it('?tab=write shows only write and ddl queries', function () {
 
 it('?tab=read shows only read queries', function () {
     $queries = $this->get(route('db-governor.queries', [
-        'token'      => $this->token,
+        'token' => $this->token,
         'connection' => 'main',
-        'tab'        => 'read',
+        'tab' => 'read',
     ]))->assertOk()->viewData('queries');
 
     expect($queries->count())->toBe(1);
@@ -89,9 +90,9 @@ it('?tab=read shows only read queries', function () {
 
 it('?tab=read does not show write or ddl queries', function () {
     $queries = $this->get(route('db-governor.queries', [
-        'token'      => $this->token,
+        'token' => $this->token,
         'connection' => 'main',
-        'tab'        => 'read',
+        'tab' => 'read',
     ]))->assertOk()->viewData('queries');
 
     $types = $queries->pluck('query_type')->unique()->values()->all();
@@ -103,9 +104,9 @@ it('?tab=read does not show write or ddl queries', function () {
 
 it('tab variable is passed to the view', function () {
     $tab = $this->get(route('db-governor.queries', [
-        'token'      => $this->token,
+        'token' => $this->token,
         'connection' => 'main',
-        'tab'        => 'read',
+        'tab' => 'read',
     ]))->assertOk()->viewData('tab');
 
     expect($tab)->toBe('read');
@@ -113,7 +114,7 @@ it('tab variable is passed to the view', function () {
 
 it('tab defaults to write when not specified', function () {
     $tab = $this->get(route('db-governor.queries', [
-        'token'      => $this->token,
+        'token' => $this->token,
         'connection' => 'main',
     ]))->assertOk()->viewData('tab');
 
@@ -124,7 +125,7 @@ it('tab defaults to write when not specified', function () {
 
 it('queries page HTML contains a tab=write link', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token'      => $this->token,
+        'token' => $this->token,
         'connection' => 'main',
     ]))->assertOk()->getContent();
 
@@ -133,7 +134,7 @@ it('queries page HTML contains a tab=write link', function () {
 
 it('queries page HTML contains a tab=read link', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token'      => $this->token,
+        'token' => $this->token,
         'connection' => 'main',
     ]))->assertOk()->getContent();
 
@@ -142,12 +143,11 @@ it('queries page HTML contains a tab=read link', function () {
 
 it('active tab link is visually distinguished in HTML', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token'      => $this->token,
+        'token' => $this->token,
         'connection' => 'main',
-        'tab'        => 'read',
+        'tab' => 'read',
     ]))->assertOk()->getContent();
 
     // The read tab must be marked active (e.g. border-b-2, font-semibold, font-bold, or aria-current)
     expect($html)->toMatch('/border-b-2|font-semibold|font-bold|aria-current/');
 });
-

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Mamun724682\DbGovernor\Services\AccessGuard;
 
 it('login GET route exists', function () {
     $this->get(route('db-governor.login'))->assertOk();
@@ -29,15 +30,15 @@ it('all 9 routes are registered', function () {
 
 it('view composer shares token and connection with db-governor views', function () {
     config([
-        'db-governor.allowed.admins'    => ['admin@example.com'],
+        'db-governor.allowed.admins' => ['admin@example.com'],
         'db-governor.allowed.employees' => [],
-        'db-governor.connections'       => [
-            'primary'   => 'sqlite',
+        'db-governor.connections' => [
+            'primary' => 'sqlite',
             'secondary' => 'sqlite',
         ],
     ]);
 
-    $guard = app(\Mamun724682\DbGovernor\Services\AccessGuard::class);
+    $guard = app(AccessGuard::class);
     $token = $guard->login('admin@example.com');
 
     $response = $this->get(route('db-governor.connections.pick', ['token' => $token]));

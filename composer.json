@@ -1,6 +1,9 @@
 {
     "name": "mamun724682/laravel-db-governor",
     "description": "Production-safety database governance layer for Laravel",
+    "keywords": ["laravel", "database", "governance", "query-approval", "audit", "security"],
+    "license": "MIT",
+    "homepage": "https://github.com/mamun724682/laravel-db-governor",
     "type": "library",
     "require": {
         "php": "^8.1",
@@ -14,7 +17,8 @@
         "orchestra/testbench": "^8|^9|^10|^11",
         "pestphp/pest": "^2|^3|^4",
         "pestphp/pest-plugin-laravel": "^2|^3|^4",
-        "mockery/mockery": "^1.6"
+        "mockery/mockery": "^1.6",
+        "laravel/pint": "^1"
     },
     "autoload": {
         "psr-4": {
@@ -35,6 +39,12 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true
         }
+    },
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "test:coverage": "vendor/bin/pest --coverage",
+        "lint": "vendor/bin/pint --test",
+        "lint:fix": "vendor/bin/pint"
     },
     "minimum-stability": "dev",
     "prefer-stable": true

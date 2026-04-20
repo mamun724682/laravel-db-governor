@@ -1,16 +1,17 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Mamun724682\DbGovernor\Services\AccessGuard;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     config([
-        'db-governor.allowed.admins'   => ['admin@test.com'],
-        'db-governor.connections'      => ['main' => 'sqlite'],
-        'db-governor.path'             => 'db-governor',
-        'db-governor.hidden_tables'    => [],
+        'db-governor.allowed.admins' => ['admin@test.com'],
+        'db-governor.connections' => ['main' => 'sqlite'],
+        'db-governor.path' => 'db-governor',
+        'db-governor.hidden_tables' => [],
         'db-governor.log_read_queries' => false,
     ]);
 
@@ -23,7 +24,7 @@ beforeEach(function () {
         ['id' => 3, 'label' => 'Alpha', 'meta' => null], // duplicate value to catch key collision
     ]);
 
-    $guard       = app(AccessGuard::class);
+    $guard = app(AccessGuard::class);
     $this->token = $guard->login('admin@test.com');
     $guard->setPayload($guard->validateToken($this->token));
 });
@@ -73,4 +74,3 @@ it('queries page results table renders NULL values with a null badge expression'
     // Must have a conditional for null values
     expect($html)->toContain('val === null');
 });
-

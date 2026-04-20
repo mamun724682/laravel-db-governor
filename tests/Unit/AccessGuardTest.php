@@ -2,14 +2,15 @@
 
 use Illuminate\Support\Facades\Cache;
 use Mamun724682\DbGovernor\Services\AccessGuard;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 beforeEach(function () {
     config([
-        'db-governor.allowed.admins'     => ['admin@company.com', 'lead@company.com'],
-        'db-governor.allowed.employees'  => ['dev@company.com', 'analyst@company.com'],
+        'db-governor.allowed.admins' => ['admin@company.com', 'lead@company.com'],
+        'db-governor.allowed.employees' => ['dev@company.com', 'analyst@company.com'],
         'db-governor.token_expiry_hours' => 8,
     ]);
-    $this->guard = new AccessGuard();
+    $this->guard = new AccessGuard;
 });
 
 // ── login ──────────────────────────────────────────────────────────────────
@@ -36,7 +37,7 @@ it('login is case-insensitive', function () {
 
 it('login stores token payload in cache', function () {
     $token = $this->guard->login('admin@company.com');
-    $data  = Cache::get('dbg_token_'.$token);
+    $data = Cache::get('dbg_token_'.$token);
 
     expect($data)->toBeArray()
         ->toHaveKey('email', 'admin@company.com')
@@ -46,7 +47,7 @@ it('login stores token payload in cache', function () {
 
 it('login stores employee role in cache', function () {
     $token = $this->guard->login('dev@company.com');
-    $data  = Cache::get('dbg_token_'.$token);
+    $data = Cache::get('dbg_token_'.$token);
 
     expect($data['role'])->toBe('employee');
 });
@@ -54,7 +55,7 @@ it('login stores employee role in cache', function () {
 // ── validateToken ──────────────────────────────────────────────────────────
 
 it('validateToken returns correct payload for admin', function () {
-    $token   = $this->guard->login('admin@company.com');
+    $token = $this->guard->login('admin@company.com');
     $payload = $this->guard->validateToken($token);
 
     expect($payload['email'])->toBe('admin@company.com');
@@ -62,7 +63,7 @@ it('validateToken returns correct payload for admin', function () {
 });
 
 it('validateToken returns correct payload for employee', function () {
-    $token   = $this->guard->login('dev@company.com');
+    $token = $this->guard->login('dev@company.com');
     $payload = $this->guard->validateToken($token);
 
     expect($payload['role'])->toBe('employee');
@@ -70,19 +71,19 @@ it('validateToken returns correct payload for employee', function () {
 
 it('validateToken throws on unknown (non-existent) token', function () {
     expect(fn () => $this->guard->validateToken('totally-unknown-token-xyz'))
-        ->toThrow(\RuntimeException::class);
+        ->toThrow(RuntimeException::class);
 });
 
 it('validateToken throws on expired token payload in cache', function () {
     $fakeToken = 'fake_expired_token_abc123xyz456';
     Cache::put('dbg_token_'.$fakeToken, [
-        'email'      => 'admin@company.com',
-        'role'       => 'admin',
+        'email' => 'admin@company.com',
+        'role' => 'admin',
         'expires_at' => now()->subHour()->toISOString(),
     ]);
 
     expect(fn () => $this->guard->validateToken($fakeToken))
-        ->toThrow(\RuntimeException::class, 'expired');
+        ->toThrow(RuntimeException::class, 'expired');
 });
 
 it('validateToken throws when email no longer in config', function () {
@@ -90,15 +91,15 @@ it('validateToken throws when email no longer in config', function () {
     config(['db-governor.allowed.employees' => []]);
 
     expect(fn () => $this->guard->validateToken($token))
-        ->toThrow(\RuntimeException::class, 'authorized');
+        ->toThrow(RuntimeException::class, 'authorized');
 });
 
 it('email in both admin and employee lists is treated as admin', function () {
     config([
-        'db-governor.allowed.admins'    => ['both@company.com'],
+        'db-governor.allowed.admins' => ['both@company.com'],
         'db-governor.allowed.employees' => ['both@company.com'],
     ]);
-    $token   = $this->guard->login('both@company.com');
+    $token = $this->guard->login('both@company.com');
     $payload = $this->guard->validateToken($token);
 
     expect($payload['role'])->toBe('admin');
@@ -119,15 +120,15 @@ it('validateToken throws after revokeToken', function () {
     $this->guard->revokeToken($token);
 
     expect(fn () => $this->guard->validateToken($token))
-        ->toThrow(\RuntimeException::class);
+        ->toThrow(RuntimeException::class);
 });
 
 // ── accessors ─────────────────────────────────────────────────────────────
 
 it('setPayload and accessors work correctly', function () {
     $this->guard->setPayload([
-        'email'      => 'admin@company.com',
-        'role'       => 'admin',
+        'email' => 'admin@company.com',
+        'role' => 'admin',
         'expires_at' => now()->addHour()->toISOString(),
     ]);
 
@@ -138,12 +139,11 @@ it('setPayload and accessors work correctly', function () {
 
 it('assertAdmin aborts 403 for employee role', function () {
     $this->guard->setPayload([
-        'email'      => 'dev@company.com',
-        'role'       => 'employee',
+        'email' => 'dev@company.com',
+        'role' => 'employee',
         'expires_at' => now()->addHour()->toISOString(),
     ]);
 
     expect(fn () => $this->guard->assertAdmin())
-        ->toThrow(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        ->toThrow(HttpException::class);
 });
-

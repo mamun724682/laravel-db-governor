@@ -43,4 +43,3 @@ it('uses configurable table name', function () {
     config(['db-governor.table_name' => 'custom_queries']);
     expect(config('db-governor.table_name'))->toBe('custom_queries');
 });
-

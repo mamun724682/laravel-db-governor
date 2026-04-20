@@ -1,13 +1,14 @@
 <?php
 
+use Illuminate\Support\Facades\Crypt;
 use Mamun724682\DbGovernor\Services\AccessGuard;
 
 beforeEach(function () {
     config([
-        'db-governor.allowed.admins'    => ['admin@test.com'],
+        'db-governor.allowed.admins' => ['admin@test.com'],
         'db-governor.allowed.employees' => ['dev@test.com'],
-        'db-governor.connections'       => ['main' => 'sqlite'],
-        'db-governor.path'              => 'db-governor',
+        'db-governor.connections' => ['main' => 'sqlite'],
+        'db-governor.path' => 'db-governor',
     ]);
 });
 
@@ -22,9 +23,9 @@ it('redirects to login when token is invalid', function () {
 });
 
 it('redirects to login when token is expired', function () {
-    $expired = \Illuminate\Support\Facades\Crypt::encryptString(json_encode([
-        'email'      => 'admin@test.com',
-        'role'       => 'admin',
+    $expired = Crypt::encryptString(json_encode([
+        'email' => 'admin@test.com',
+        'role' => 'admin',
         'expires_at' => now()->subHour()->toISOString(),
     ]));
     $this->get("/db-governor/{$expired}")
@@ -44,4 +45,3 @@ it('allows valid token and known connection through', function () {
     $this->get("/db-governor/{$token}/main/")
         ->assertSuccessful();
 });
-

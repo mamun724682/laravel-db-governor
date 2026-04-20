@@ -1,5 +1,7 @@
 <?php
 
+use Mamun724682\DbGovernor\Services\AccessGuard;
+
 it('login view contains email input', function () {
     $this->get(route('db-governor.login'))
         ->assertOk()
@@ -16,13 +18,13 @@ it('login view shows flash error when present', function () {
 it('connections view lists all connections', function () {
     config([
         'db-governor.allowed.admins' => ['admin@example.com'],
-        'db-governor.connections'    => [
-            'primary'   => 'sqlite',
+        'db-governor.connections' => [
+            'primary' => 'sqlite',
             'secondary' => 'sqlite',
         ],
     ]);
 
-    $guard = app(\Mamun724682\DbGovernor\Services\AccessGuard::class);
+    $guard = app(AccessGuard::class);
     $token = $guard->login('admin@example.com');
 
     $this->get(route('db-governor.connections.pick', ['token' => $token]))
@@ -31,4 +33,3 @@ it('connections view lists all connections', function () {
         ->assertSee('secondary', false)
         ->assertSee('localStorage', false);
 });
-

@@ -5,14 +5,15 @@ use Mamun724682\DbGovernor\DTOs\QueryResult;
 use Mamun724682\DbGovernor\Enums\QueryStatus;
 use Mamun724682\DbGovernor\Exceptions\QueryNotApprovedException;
 use Mamun724682\DbGovernor\Models\GovernedQuery;
-use Mamun724682\DbGovernor\Services\{AccessGuard, QueryExecutor};
+use Mamun724682\DbGovernor\Services\AccessGuard;
+use Mamun724682\DbGovernor\Services\QueryExecutor;
 
 beforeEach(function () {
     config([
-        'db-governor.connections'           => ['main' => 'sqlite'],
-        'db-governor.allowed.admins'        => ['admin@test.com'],
-        'db-governor.rollback_strategy'     => 'row_snapshot',
-        'db-governor.snapshot_max_rows'     => 500,
+        'db-governor.connections' => ['main' => 'sqlite'],
+        'db-governor.allowed.admins' => ['admin@test.com'],
+        'db-governor.rollback_strategy' => 'row_snapshot',
+        'db-governor.snapshot_max_rows' => 500,
         'db-governor.governance_connection' => null,
     ]);
     $guard = app(AccessGuard::class);
@@ -36,11 +37,11 @@ it('executeRead returns failed QueryResult on invalid SQL', function () {
 
 it('executeWrite throws QueryNotApprovedException when not approved', function () {
     $query = GovernedQuery::create([
-        'connection'   => 'main',
-        'sql_raw'      => 'CREATE TABLE tmp_test (id INTEGER)',
-        'query_type'   => 'ddl',
-        'risk_level'   => 'low',
-        'status'       => QueryStatus::Pending->value,
+        'connection' => 'main',
+        'sql_raw' => 'CREATE TABLE tmp_test (id INTEGER)',
+        'query_type' => 'ddl',
+        'risk_level' => 'low',
+        'status' => QueryStatus::Pending->value,
         'submitted_by' => 'dev@test.com',
     ]);
 
@@ -52,11 +53,11 @@ it('executeWrite executes approved query and updates status to executed', functi
     DB::connection('sqlite')->statement('CREATE TABLE IF NOT EXISTS tmp_exec_test (id INTEGER, val TEXT)');
 
     $query = GovernedQuery::create([
-        'connection'   => 'main',
-        'sql_raw'      => "INSERT INTO tmp_exec_test (id, val) VALUES (1, 'test')",
-        'query_type'   => 'write',
-        'risk_level'   => 'low',
-        'status'       => QueryStatus::Approved->value,
+        'connection' => 'main',
+        'sql_raw' => "INSERT INTO tmp_exec_test (id, val) VALUES (1, 'test')",
+        'query_type' => 'write',
+        'risk_level' => 'low',
+        'status' => QueryStatus::Approved->value,
         'submitted_by' => 'dev@test.com',
     ]);
 
@@ -70,4 +71,3 @@ it('executeWrite executes approved query and updates status to executed', functi
 
     DB::connection('sqlite')->statement('DROP TABLE IF EXISTS tmp_exec_test');
 });
-

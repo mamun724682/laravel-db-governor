@@ -1,22 +1,23 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mamun724682\DbGovernor\Services\AccessGuard;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     config([
-        'db-governor.allowed.admins'   => ['admin@test.com'],
-        'db-governor.connections'      => ['main' => 'sqlite'],
-        'db-governor.path'             => 'db-governor',
-        'db-governor.hidden_tables'    => [],
+        'db-governor.allowed.admins' => ['admin@test.com'],
+        'db-governor.connections' => ['main' => 'sqlite'],
+        'db-governor.path' => 'db-governor',
+        'db-governor.hidden_tables' => [],
         'db-governor.blocked_patterns' => [],
         'db-governor.flagged_patterns' => [],
-        'db-governor.dry_run_enabled'  => false,
+        'db-governor.dry_run_enabled' => false,
         'db-governor.log_read_queries' => false,
     ]);
 
-    $guard       = app(AccessGuard::class);
+    $guard = app(AccessGuard::class);
     $this->token = $guard->login('admin@test.com');
     $guard->setPayload($guard->validateToken($this->token));
 });
@@ -68,4 +69,3 @@ it('queries page console Run button is disabled when textarea is empty', functio
     // The Run button must use :disabled="loading || !sql.trim()" (already exists — assert it)
     expect($html)->toContain('!sql.trim()');
 });
-

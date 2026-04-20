@@ -8,7 +8,7 @@ beforeEach(function () {
     $this->conn->statement('CREATE TABLE IF NOT EXISTS test_users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)');
     $this->conn->statement("INSERT INTO test_users (name, email) VALUES ('Alice', 'a@test.com')");
     $this->conn->statement("INSERT INTO test_users (name, email) VALUES ('Bob', 'b@test.com')");
-    $this->inspector = new SqliteInspector();
+    $this->inspector = new SqliteInspector;
 });
 
 afterEach(function () {
@@ -48,4 +48,3 @@ it('estimateAffectedRows returns null when no WHERE clause', function () {
     $sql = "UPDATE test_users SET name = 'X'";
     expect($this->inspector->estimateAffectedRows($sql, $this->conn))->toBeNull();
 });
-

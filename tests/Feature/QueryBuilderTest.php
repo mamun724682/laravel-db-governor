@@ -1,23 +1,24 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Mamun724682\DbGovernor\Services\AccessGuard;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     config([
         'db-governor.allowed.admins' => ['admin@test.com'],
-        'db-governor.connections'    => ['main' => 'sqlite'],
-        'db-governor.path'           => 'db-governor',
-        'db-governor.hidden_tables'  => ['secret_tbl'],
+        'db-governor.connections' => ['main' => 'sqlite'],
+        'db-governor.path' => 'db-governor',
+        'db-governor.hidden_tables' => ['secret_tbl'],
     ]);
 
     DB::connection('sqlite')->statement(
         'CREATE TABLE IF NOT EXISTS qb_test (id INTEGER PRIMARY KEY, name TEXT, score INTEGER)'
     );
 
-    $guard       = app(AccessGuard::class);
+    $guard = app(AccessGuard::class);
     $this->token = $guard->login('admin@test.com');
     $guard->setPayload($guard->validateToken($this->token));
 });
@@ -29,9 +30,9 @@ afterEach(function () {
 
 it('schema endpoint returns columns for a visible table', function () {
     $response = $this->get(route('db-governor.schema.table', [
-        'token'      => $this->token,
+        'token' => $this->token,
         'connection' => 'main',
-        'table'      => 'qb_test',
+        'table' => 'qb_test',
     ]))->assertOk()->json();
 
     $names = array_column($response['columns'], 'name');
@@ -42,9 +43,9 @@ it('schema endpoint returns 404 for a hidden table', function () {
     DB::connection('sqlite')->statement('CREATE TABLE IF NOT EXISTS secret_tbl (id INTEGER)');
 
     $this->get(route('db-governor.schema.table', [
-        'token'      => $this->token,
+        'token' => $this->token,
         'connection' => 'main',
-        'table'      => 'secret_tbl',
+        'table' => 'secret_tbl',
     ]))->assertNotFound();
 });
 
@@ -63,4 +64,3 @@ it('queries page console modal contains raw SQL tab', function () {
 
     expect($html)->toContain('Raw SQL');
 });
-

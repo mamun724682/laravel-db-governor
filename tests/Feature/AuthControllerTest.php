@@ -1,13 +1,14 @@
 <?php
 
+use Illuminate\Support\Facades\Cache;
 use Mamun724682\DbGovernor\Services\AccessGuard;
 
 beforeEach(function () {
     config([
-        'db-governor.allowed.admins'    => ['admin@test.com'],
+        'db-governor.allowed.admins' => ['admin@test.com'],
         'db-governor.allowed.employees' => ['dev@test.com'],
-        'db-governor.connections'       => ['main' => 'sqlite'],
-        'db-governor.path'              => 'db-governor',
+        'db-governor.connections' => ['main' => 'sqlite'],
+        'db-governor.path' => 'db-governor',
     ]);
 });
 
@@ -40,13 +41,13 @@ it('logout clears the cache token and redirects to login', function () {
     $guard = app(AccessGuard::class);
     $token = $guard->login('admin@test.com');
 
-    expect(\Illuminate\Support\Facades\Cache::has('dbg_token_'.$token))->toBeTrue();
+    expect(Cache::has('dbg_token_'.$token))->toBeTrue();
 
     $this->post(route('db-governor.logout', ['token' => $token]))
         ->assertRedirect(route('db-governor.login'))
         ->assertSessionHas('success');
 
-    expect(\Illuminate\Support\Facades\Cache::has('dbg_token_'.$token))->toBeFalse();
+    expect(Cache::has('dbg_token_'.$token))->toBeFalse();
 });
 
 it('token is invalid after logout', function () {
@@ -56,7 +57,7 @@ it('token is invalid after logout', function () {
     $this->post(route('db-governor.logout', ['token' => $token]));
 
     expect(fn () => $guard->validateToken($token))
-        ->toThrow(\RuntimeException::class);
+        ->toThrow(RuntimeException::class);
 });
 
 it('logout redirects to login even with an already-invalid token', function () {

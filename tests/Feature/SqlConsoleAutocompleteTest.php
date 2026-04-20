@@ -1,23 +1,24 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Mamun724682\DbGovernor\Services\AccessGuard;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     config([
         'db-governor.allowed.admins' => ['admin@test.com'],
-        'db-governor.connections'    => ['main' => 'sqlite'],
-        'db-governor.path'           => 'db-governor',
-        'db-governor.hidden_tables'  => [],
+        'db-governor.connections' => ['main' => 'sqlite'],
+        'db-governor.path' => 'db-governor',
+        'db-governor.hidden_tables' => [],
     ]);
 
     DB::connection('sqlite')->statement(
         'CREATE TABLE IF NOT EXISTS ac_users (id INTEGER PRIMARY KEY, email TEXT, name TEXT)'
     );
 
-    $guard       = app(AccessGuard::class);
+    $guard = app(AccessGuard::class);
     $this->token = $guard->login('admin@test.com');
     $guard->setPayload($guard->validateToken($this->token));
 });
@@ -50,9 +51,9 @@ it('queries page embeds SQL keywords for autocomplete', function () {
 
 it('schema endpoint returns columns used for column-level autocomplete', function () {
     $response = $this->get(route('db-governor.schema.table', [
-        'token'      => $this->token,
+        'token' => $this->token,
         'connection' => 'main',
-        'table'      => 'ac_users',
+        'table' => 'ac_users',
     ]))->assertOk()->json();
 
     $names = array_column($response['columns'], 'name');
@@ -60,4 +61,3 @@ it('schema endpoint returns columns used for column-level autocomplete', functio
         ->toContain('email')
         ->toContain('name');
 });
-

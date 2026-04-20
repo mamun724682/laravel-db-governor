@@ -1,25 +1,26 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Mamun724682\DbGovernor\Models\GovernedQuery;
 use Mamun724682\DbGovernor\Services\AccessGuard;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     config([
-        'db-governor.allowed.admins'    => ['admin@test.com'],
+        'db-governor.allowed.admins' => ['admin@test.com'],
         'db-governor.allowed.employees' => ['dev@test.com'],
-        'db-governor.connections'       => ['main' => 'sqlite'],
-        'db-governor.path'              => 'db-governor',
-        'db-governor.blocked_patterns'  => [],
-        'db-governor.flagged_patterns'  => [],
-        'db-governor.dry_run_enabled'   => false,
-        'db-governor.hidden_tables'     => [],
-        'db-governor.log_read_queries'  => true,
+        'db-governor.connections' => ['main' => 'sqlite'],
+        'db-governor.path' => 'db-governor',
+        'db-governor.blocked_patterns' => [],
+        'db-governor.flagged_patterns' => [],
+        'db-governor.dry_run_enabled' => false,
+        'db-governor.hidden_tables' => [],
+        'db-governor.log_read_queries' => true,
     ]);
 
-    $guard       = app(AccessGuard::class);
+    $guard = app(AccessGuard::class);
     $this->token = $guard->login('dev@test.com');
     $guard->setPayload($guard->validateToken($this->token));
 
@@ -132,7 +133,7 @@ it('admin can see the read log row submitted by an employee', function () {
         'sql' => 'SELECT * FROM read_log_tbl',
     ])->assertOk();
 
-    $guard      = app(AccessGuard::class);
+    $guard = app(AccessGuard::class);
     $adminToken = $guard->login('admin@test.com');
     $guard->setPayload($guard->validateToken($adminToken));
 
@@ -140,4 +141,3 @@ it('admin can see the read log row submitted by an employee', function () {
     expect($logs->count())->toBe(1);
     expect($logs->first()->submitted_by)->toBe('dev@test.com');
 });
-

@@ -1,15 +1,17 @@
 <?php
 
+use Mamun724682\DbGovernor\Services\AccessGuard;
+
 beforeEach(function () {
     config([
-        'db-governor.allowed.admins'    => ['admin@test.com'],
+        'db-governor.allowed.admins' => ['admin@test.com'],
         'db-governor.allowed.employees' => [],
-        'db-governor.connections'       => ['main' => 'sqlite'],
+        'db-governor.connections' => ['main' => 'sqlite'],
     ]);
 });
 
 it('dashboard shows stats cards', function () {
-    $guard = app(\Mamun724682\DbGovernor\Services\AccessGuard::class);
+    $guard = app(AccessGuard::class);
     $token = $guard->login('admin@test.com');
 
     $this->get(route('db-governor.dashboard', ['token' => $token, 'connection' => 'main']))
@@ -19,7 +21,7 @@ it('dashboard shows stats cards', function () {
 });
 
 it('dashboard shows all six stat labels', function () {
-    $guard = app(\Mamun724682\DbGovernor\Services\AccessGuard::class);
+    $guard = app(AccessGuard::class);
     $token = $guard->login('admin@test.com');
 
     $this->get(route('db-governor.dashboard', ['token' => $token, 'connection' => 'main']))
@@ -32,7 +34,7 @@ it('dashboard shows all six stat labels', function () {
 });
 
 it('write modal markup is present on queries page', function () {
-    $guard = app(\Mamun724682\DbGovernor\Services\AccessGuard::class);
+    $guard = app(AccessGuard::class);
     $token = $guard->login('admin@test.com');
 
     $this->get(route('db-governor.queries', ['token' => $token, 'connection' => 'main']))
@@ -40,4 +42,3 @@ it('write modal markup is present on queries page', function () {
         ->assertSee('writeModal', false)
         ->assertSee('Submit for Approval');
 });
-

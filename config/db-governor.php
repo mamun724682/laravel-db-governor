@@ -16,7 +16,7 @@ return [
     // admins   — can approve/reject, trigger execution, trigger rollback, see all queries
     // employees — can submit queries (SELECT runs immediately; WRITE goes to queue)
     'allowed' => [
-        'admins'    => array_filter(explode(',', env('DB_GOVERNOR_ADMINS', ''))),
+        'admins' => array_filter(explode(',', env('DB_GOVERNOR_ADMINS', ''))),
         'employees' => array_filter(explode(',', env('DB_GOVERNOR_EMPLOYEES', ''))),
     ],
 
@@ -40,7 +40,7 @@ return [
     ],
 
     'max_affected_rows' => env('DB_GOVERNOR_MAX_ROWS', 1000),
-    'dry_run_enabled'   => env('DB_GOVERNOR_DRY_RUN', true),
+    'dry_run_enabled' => env('DB_GOVERNOR_DRY_RUN', true),
 
     // Cache TTL in seconds for schema introspection (table list, column list).
     // Set to 0 to disable caching.
@@ -76,4 +76,3 @@ return [
         'telescope_monitoring',
     ],
 ];
-

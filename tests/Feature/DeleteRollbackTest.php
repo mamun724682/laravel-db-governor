@@ -1,17 +1,20 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Mamun724682\DbGovernor\DTOs\SnapshotData;
 use Mamun724682\DbGovernor\Enums\QueryStatus;
 use Mamun724682\DbGovernor\Models\GovernedQuery;
-use Mamun724682\DbGovernor\Services\{AccessGuard, RollbackService};
+use Mamun724682\DbGovernor\Services\AccessGuard;
+use Mamun724682\DbGovernor\Services\QueryExecutor;
+use Mamun724682\DbGovernor\Services\RollbackService;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     config([
-        'db-governor.connections'           => ['main' => 'sqlite'],
-        'db-governor.snapshot_max_rows'     => 500,
+        'db-governor.connections' => ['main' => 'sqlite'],
+        'db-governor.snapshot_max_rows' => 500,
         'db-governor.governance_connection' => null,
     ]);
 
@@ -25,8 +28,8 @@ beforeEach(function () {
     ]);
 
     app(AccessGuard::class)->setPayload([
-        'email'      => 'admin@test.com',
-        'role'       => 'admin',
+        'email' => 'admin@test.com',
+        'role' => 'admin',
         'expires_at' => now()->addHour()->toISOString(),
     ]);
 });
@@ -88,14 +91,14 @@ it('rollback re-inserts a single deleted row', function () {
     expect(DB::connection('sqlite')->table('del_users')->count())->toBe(2);
 
     $query = GovernedQuery::create([
-        'connection'           => 'main',
-        'sql_raw'              => 'DELETE FROM del_users WHERE id = 1',
-        'query_type'           => 'write',
-        'risk_level'           => 'low',
-        'status'               => QueryStatus::Executed->value,
-        'submitted_by'         => 'dev@test.com',
-        'snapshot_data'        => json_encode([['id' => 1, 'name' => 'Alice', 'active' => 1]]),
-        'query_table'       => 'del_users',
+        'connection' => 'main',
+        'sql_raw' => 'DELETE FROM del_users WHERE id = 1',
+        'query_type' => 'write',
+        'risk_level' => 'low',
+        'status' => QueryStatus::Executed->value,
+        'submitted_by' => 'dev@test.com',
+        'snapshot_data' => json_encode([['id' => 1, 'name' => 'Alice', 'active' => 1]]),
+        'query_table' => 'del_users',
         'snapshot_primary_key' => 'id',
     ]);
 
@@ -115,17 +118,17 @@ it('rollback re-inserts multiple deleted rows', function () {
     expect(DB::connection('sqlite')->table('del_users')->count())->toBe(1);
 
     $query = GovernedQuery::create([
-        'connection'           => 'main',
-        'sql_raw'              => 'DELETE FROM del_users WHERE id IN (1, 2)',
-        'query_type'           => 'write',
-        'risk_level'           => 'low',
-        'status'               => QueryStatus::Executed->value,
-        'submitted_by'         => 'dev@test.com',
-        'snapshot_data'        => json_encode([
+        'connection' => 'main',
+        'sql_raw' => 'DELETE FROM del_users WHERE id IN (1, 2)',
+        'query_type' => 'write',
+        'risk_level' => 'low',
+        'status' => QueryStatus::Executed->value,
+        'submitted_by' => 'dev@test.com',
+        'snapshot_data' => json_encode([
             ['id' => 1, 'name' => 'Alice', 'active' => 1],
             ['id' => 2, 'name' => 'Bob',   'active' => 1],
         ]),
-        'query_table'       => 'del_users',
+        'query_table' => 'del_users',
         'snapshot_primary_key' => 'id',
     ]);
 
@@ -140,14 +143,14 @@ it('rollback marks query status as rolled_back after re-insert', function () {
     DB::connection('sqlite')->table('del_users')->where('id', 1)->delete();
 
     $query = GovernedQuery::create([
-        'connection'           => 'main',
-        'sql_raw'              => 'DELETE FROM del_users WHERE id = 1',
-        'query_type'           => 'write',
-        'risk_level'           => 'low',
-        'status'               => QueryStatus::Executed->value,
-        'submitted_by'         => 'dev@test.com',
-        'snapshot_data'        => json_encode([['id' => 1, 'name' => 'Alice', 'active' => 1]]),
-        'query_table'       => 'del_users',
+        'connection' => 'main',
+        'sql_raw' => 'DELETE FROM del_users WHERE id = 1',
+        'query_type' => 'write',
+        'risk_level' => 'low',
+        'status' => QueryStatus::Executed->value,
+        'submitted_by' => 'dev@test.com',
+        'snapshot_data' => json_encode([['id' => 1, 'name' => 'Alice', 'active' => 1]]),
+        'query_table' => 'del_users',
         'snapshot_primary_key' => 'id',
     ]);
 
@@ -161,16 +164,16 @@ it('rollback marks query status as rolled_back after re-insert', function () {
 
 it('rollback returns failure when attempting to rollback a DELETE twice', function () {
     $query = GovernedQuery::create([
-        'connection'           => 'main',
-        'sql_raw'              => 'DELETE FROM del_users WHERE id = 1',
-        'query_type'           => 'write',
-        'risk_level'           => 'low',
-        'status'               => QueryStatus::RolledBack->value,
-        'submitted_by'         => 'dev@test.com',
-        'snapshot_data'        => json_encode([['id' => 1, 'name' => 'Alice', 'active' => 1]]),
-        'query_table'       => 'del_users',
+        'connection' => 'main',
+        'sql_raw' => 'DELETE FROM del_users WHERE id = 1',
+        'query_type' => 'write',
+        'risk_level' => 'low',
+        'status' => QueryStatus::RolledBack->value,
+        'submitted_by' => 'dev@test.com',
+        'snapshot_data' => json_encode([['id' => 1, 'name' => 'Alice', 'active' => 1]]),
+        'query_table' => 'del_users',
         'snapshot_primary_key' => 'id',
-        'rolled_back_at'       => now(),
+        'rolled_back_at' => now(),
     ]);
 
     $result = app(RollbackService::class)->rollback($query);
@@ -183,15 +186,15 @@ it('rollback returns failure when attempting to rollback a DELETE twice', functi
 
 it('executeWrite captures snapshot for DELETE and rollback restores rows', function () {
     $query = GovernedQuery::create([
-        'connection'   => 'main',
-        'sql_raw'      => 'DELETE FROM del_users WHERE id = 1',
-        'query_type'   => 'write',
-        'risk_level'   => 'low',
-        'status'       => QueryStatus::Approved->value,
+        'connection' => 'main',
+        'sql_raw' => 'DELETE FROM del_users WHERE id = 1',
+        'query_type' => 'write',
+        'risk_level' => 'low',
+        'status' => QueryStatus::Approved->value,
         'submitted_by' => 'dev@test.com',
     ]);
 
-    $executeResult = app(\Mamun724682\DbGovernor\Services\QueryExecutor::class)->executeWrite($query);
+    $executeResult = app(QueryExecutor::class)->executeWrite($query);
     expect($executeResult->success)->toBeTrue();
 
     $query->refresh();
@@ -204,4 +207,3 @@ it('executeWrite captures snapshot for DELETE and rollback restores rows', funct
     expect($rollbackResult->success)->toBeTrue();
     expect(DB::connection('sqlite')->table('del_users')->count())->toBe(3);
 });
-

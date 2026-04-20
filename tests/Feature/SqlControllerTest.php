@@ -1,22 +1,23 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Mamun724682\DbGovernor\Services\AccessGuard;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     config([
-        'db-governor.allowed.admins'   => ['admin@test.com'],
-        'db-governor.connections'      => ['main' => 'sqlite'],
-        'db-governor.path'             => 'db-governor',
-        'db-governor.hidden_tables'    => ['secret_table', 'jobs'],
+        'db-governor.allowed.admins' => ['admin@test.com'],
+        'db-governor.connections' => ['main' => 'sqlite'],
+        'db-governor.path' => 'db-governor',
+        'db-governor.hidden_tables' => ['secret_table', 'jobs'],
         'db-governor.blocked_patterns' => [],
         'db-governor.flagged_patterns' => [],
-        'db-governor.dry_run_enabled'  => false,
+        'db-governor.dry_run_enabled' => false,
     ]);
 
-    $guard       = app(AccessGuard::class);
+    $guard = app(AccessGuard::class);
     $this->token = $guard->login('admin@test.com');
     $guard->setPayload($guard->validateToken($this->token));
 });
@@ -90,10 +91,9 @@ it('returns rows successfully for a valid SELECT on a visible table', function (
 
 it('returns write type for a write query without executing it', function () {
     $response = $this->post(route('db-governor.sql.execute', ['token' => $this->token, 'connection' => 'main']), [
-        'sql' => "UPDATE users SET active = 0 WHERE id = 1",
+        'sql' => 'UPDATE users SET active = 0 WHERE id = 1',
     ])->assertOk()->json();
 
     expect($response['type'])->toBe('write');
     expect($response['sql'])->toContain('UPDATE');
 });
-

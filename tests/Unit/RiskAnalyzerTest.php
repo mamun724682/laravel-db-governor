@@ -2,7 +2,8 @@
 
 use Mamun724682\DbGovernor\DTOs\RiskReport;
 use Mamun724682\DbGovernor\Enums\RiskLevel;
-use Mamun724682\DbGovernor\Services\{DryRunEngine, RiskAnalyzer};
+use Mamun724682\DbGovernor\Services\DryRunEngine;
+use Mamun724682\DbGovernor\Services\RiskAnalyzer;
 
 function makeAnalyzer(int $maxRows = 1000, ?int $estimatedRows = null): RiskAnalyzer
 {
@@ -75,4 +76,3 @@ it('skips dry run for blocked queries', function () {
     $analyzer = new RiskAnalyzer(['/DROP/i'], [], 1000, $dryRun);
     $analyzer->analyze('DROP TABLE users', 'main');
 });
-

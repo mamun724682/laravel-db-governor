@@ -1,19 +1,21 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Mamun724682\DbGovernor\Services\{AccessGuard, ConnectionManager};
+use Mamun724682\DbGovernor\Services\AccessGuard;
+use Mamun724682\DbGovernor\Services\ConnectionManager;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     config([
-        'db-governor.allowed.admins'  => ['admin@test.com'],
-        'db-governor.connections'     => ['main' => 'sqlite'],
-        'db-governor.path'            => 'db-governor',
-        'db-governor.hidden_tables'   => ['secret_table', 'jobs'],
+        'db-governor.allowed.admins' => ['admin@test.com'],
+        'db-governor.connections' => ['main' => 'sqlite'],
+        'db-governor.path' => 'db-governor',
+        'db-governor.hidden_tables' => ['secret_table', 'jobs'],
     ]);
 
-    $guard       = app(AccessGuard::class);
+    $guard = app(AccessGuard::class);
     $this->token = $guard->login('admin@test.com');
     $guard->setPayload($guard->validateToken($this->token));
 
@@ -28,17 +30,17 @@ afterEach(function () {
 
 it('returns 200 for a visible table', function () {
     $this->get(route('db-governor.table.show', [
-        'token'      => $this->token,
+        'token' => $this->token,
         'connection' => 'main',
-        'table'      => 'visible_tbl',
+        'table' => 'visible_tbl',
     ]))->assertOk();
 });
 
 it('returns 404 for a hidden table accessed via direct URL', function () {
     $this->get(route('db-governor.table.show', [
-        'token'      => $this->token,
+        'token' => $this->token,
         'connection' => 'main',
-        'table'      => 'secret_table',
+        'table' => 'secret_table',
     ]))->assertNotFound();
 });
 
@@ -57,9 +59,9 @@ it('listTables includes visible tables', function () {
 
 it('sidebar view does not render links for hidden tables', function () {
     $html = $this->get(route('db-governor.table.show', [
-        'token'      => $this->token,
+        'token' => $this->token,
         'connection' => 'main',
-        'table'      => 'visible_tbl',
+        'table' => 'visible_tbl',
     ]))->assertOk()->getContent();
 
     // The sidebar must NOT contain a link to the hidden table
@@ -70,9 +72,8 @@ it('hidden table URL block is case-sensitive match', function () {
     // 'Secret_Table' (different case) is NOT in hidden list, so it would 404 for a different reason
     // but 'secret_table' (exact match) must be blocked
     $this->get(route('db-governor.table.show', [
-        'token'      => $this->token,
+        'token' => $this->token,
         'connection' => 'main',
-        'table'      => 'secret_table',
+        'table' => 'secret_table',
     ]))->assertNotFound();
 });
-

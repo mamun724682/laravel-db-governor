@@ -1,9 +1,10 @@
 <?php
 
+use Illuminate\Support\ServiceProvider;
 use Mamun724682\DbGovernor\DbGovernorServiceProvider;
 
 it('config is publishable with db-governor-config tag', function () {
-    $publishes = \Illuminate\Support\ServiceProvider::pathsToPublish(
+    $publishes = ServiceProvider::pathsToPublish(
         DbGovernorServiceProvider::class,
         'db-governor-config'
     );
@@ -11,7 +12,7 @@ it('config is publishable with db-governor-config tag', function () {
 });
 
 it('views are publishable with db-governor-views tag', function () {
-    $publishes = \Illuminate\Support\ServiceProvider::pathsToPublish(
+    $publishes = ServiceProvider::pathsToPublish(
         DbGovernorServiceProvider::class,
         'db-governor-views'
     );
@@ -32,4 +33,3 @@ it('config file exists and has required keys', function () {
     expect(config('db-governor.flagged_patterns'))->toBeArray();
     expect(config('db-governor.max_affected_rows'))->toBeNumeric();
 });
-

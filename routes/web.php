@@ -9,7 +9,7 @@ use Mamun724682\DbGovernor\Http\Controllers\SchemaController;
 use Mamun724682\DbGovernor\Http\Controllers\SqlController;
 use Mamun724682\DbGovernor\Http\Controllers\TableController;
 
-$prefix     = config('db-governor.path', 'db-governor');
+$prefix = config('db-governor.path', 'db-governor');
 $middleware = config('db-governor.middleware', ['web']);
 
 Route::prefix($prefix)

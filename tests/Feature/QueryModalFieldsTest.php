@@ -1,19 +1,20 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mamun724682\DbGovernor\Enums\QueryStatus;
 use Mamun724682\DbGovernor\Models\GovernedQuery;
 use Mamun724682\DbGovernor\Services\AccessGuard;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     config([
         'db-governor.allowed.admins' => ['admin@test.com'],
-        'db-governor.connections'    => ['main' => 'sqlite'],
-        'db-governor.path'           => 'db-governor',
+        'db-governor.connections' => ['main' => 'sqlite'],
+        'db-governor.path' => 'db-governor',
     ]);
 
-    $guard       = app(AccessGuard::class);
+    $guard = app(AccessGuard::class);
     $this->token = $guard->login('admin@test.com');
     $guard->setPayload($guard->validateToken($this->token));
 });
@@ -80,4 +81,3 @@ it('queries page shows no snapshot message when snapshot is null', function () {
     // Should have a conditional for no-snapshot state
     expect($html)->toContain('snapshot_data');
 });
-

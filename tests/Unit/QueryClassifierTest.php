@@ -3,7 +3,7 @@
 use Mamun724682\DbGovernor\Enums\QueryType;
 use Mamun724682\DbGovernor\Services\QueryClassifier;
 
-beforeEach(fn () => $this->classifier = new QueryClassifier());
+beforeEach(fn () => $this->classifier = new QueryClassifier);
 
 // --- classify ---
 it('classifies SELECT as READ', function () {
@@ -81,4 +81,3 @@ it('returns unique tables only', function () {
     $tables = $this->classifier->extractTables('SELECT * FROM users JOIN users AS u2 ON users.id = u2.id');
     expect(count(array_unique($tables)))->toBe(count($tables));
 });
-

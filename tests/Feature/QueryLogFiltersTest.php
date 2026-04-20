@@ -1,33 +1,34 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mamun724682\DbGovernor\Enums\QueryStatus;
 use Mamun724682\DbGovernor\Models\GovernedQuery;
 use Mamun724682\DbGovernor\Services\AccessGuard;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     config([
-        'db-governor.allowed.admins'    => ['admin@test.com'],
+        'db-governor.allowed.admins' => ['admin@test.com'],
         'db-governor.allowed.employees' => ['dev@test.com'],
-        'db-governor.connections'       => ['main' => 'sqlite'],
-        'db-governor.path'              => 'db-governor',
+        'db-governor.connections' => ['main' => 'sqlite'],
+        'db-governor.path' => 'db-governor',
     ]);
 
     for ($i = 1; $i <= 30; $i++) {
         GovernedQuery::create([
-            'connection'   => 'main',
-            'sql_raw'      => "UPDATE users SET active=0 WHERE id={$i}",
-            'name'         => "Query {$i}",
-            'description'  => 'Batch update',
-            'query_type'   => 'write',
-            'risk_level'   => 'low',
-            'status'       => QueryStatus::Pending->value,
+            'connection' => 'main',
+            'sql_raw' => "UPDATE users SET active=0 WHERE id={$i}",
+            'name' => "Query {$i}",
+            'description' => 'Batch update',
+            'query_type' => 'write',
+            'risk_level' => 'low',
+            'status' => QueryStatus::Pending->value,
             'submitted_by' => 'dev@test.com',
         ]);
     }
 
-    $guard       = app(AccessGuard::class);
+    $guard = app(AccessGuard::class);
     $this->token = $guard->login('admin@test.com');
     $guard->setPayload($guard->validateToken($this->token));
 });
@@ -44,7 +45,7 @@ it('query log uses simplePaginate with 25 items per page', function () {
 
 it('keyword filter searches sql_raw', function () {
     $response = $this->get(route('db-governor.queries', [
-        'token'   => $this->token, 'connection' => 'main',
+        'token' => $this->token, 'connection' => 'main',
         'keyword' => 'WHERE id=1',
     ]))->assertOk();
 
@@ -57,7 +58,7 @@ it('keyword filter searches sql_raw', function () {
 
 it('keyword filter searches name', function () {
     $response = $this->get(route('db-governor.queries', [
-        'token'   => $this->token, 'connection' => 'main',
+        'token' => $this->token, 'connection' => 'main',
         'keyword' => 'Query 5',
     ]))->assertOk();
 
@@ -70,8 +71,8 @@ it('status filter returns only matching status rows', function () {
     GovernedQuery::first()->update(['status' => QueryStatus::Approved->value]);
 
     $response = $this->get(route('db-governor.queries', [
-        'token'      => $this->token, 'connection' => 'main',
-        'status'     => QueryStatus::Approved->value,
+        'token' => $this->token, 'connection' => 'main',
+        'status' => QueryStatus::Approved->value,
     ]))->assertOk();
 
     $queries = $response->viewData('queries');
@@ -84,7 +85,7 @@ it('date_from filter excludes older rows', function () {
     GovernedQuery::first()->update(['created_at' => now()]);
 
     $response = $this->get(route('db-governor.queries', [
-        'token'     => $this->token, 'connection' => 'main',
+        'token' => $this->token, 'connection' => 'main',
         'date_from' => now()->subDay()->toDateString(),
     ]))->assertOk();
 
@@ -97,11 +98,10 @@ it('date_to filter excludes future rows', function () {
     GovernedQuery::first()->update(['created_at' => now()->subDays(3)]);
 
     $response = $this->get(route('db-governor.queries', [
-        'token'   => $this->token, 'connection' => 'main',
+        'token' => $this->token, 'connection' => 'main',
         'date_to' => now()->toDateString(),
     ]))->assertOk();
 
     $queries = $response->viewData('queries');
     expect($queries->count())->toBe(1);
 });
-

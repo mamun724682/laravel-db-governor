@@ -4,12 +4,13 @@ use Illuminate\Support\Facades\DB;
 use Mamun724682\DbGovernor\DTOs\SnapshotData;
 use Mamun724682\DbGovernor\Enums\QueryStatus;
 use Mamun724682\DbGovernor\Models\GovernedQuery;
-use Mamun724682\DbGovernor\Services\{AccessGuard, RollbackService};
+use Mamun724682\DbGovernor\Services\AccessGuard;
+use Mamun724682\DbGovernor\Services\RollbackService;
 
 beforeEach(function () {
     config([
-        'db-governor.connections'           => ['main' => 'sqlite'],
-        'db-governor.snapshot_max_rows'     => 500,
+        'db-governor.connections' => ['main' => 'sqlite'],
+        'db-governor.snapshot_max_rows' => 500,
         'db-governor.governance_connection' => null,
     ]);
     DB::connection('sqlite')->statement(
@@ -51,12 +52,12 @@ it('captureBeforeState returns SnapshotData for UPDATE with WHERE', function () 
 
 it('rollback returns failure when no snapshot', function () {
     $query = GovernedQuery::create([
-        'connection'    => 'main',
-        'sql_raw'       => 'UPDATE rb_users SET active=0 WHERE id=1',
-        'query_type'    => 'write',
-        'risk_level'    => 'low',
-        'status'        => QueryStatus::Executed->value,
-        'submitted_by'  => 'dev@test.com',
+        'connection' => 'main',
+        'sql_raw' => 'UPDATE rb_users SET active=0 WHERE id=1',
+        'query_type' => 'write',
+        'risk_level' => 'low',
+        'status' => QueryStatus::Executed->value,
+        'submitted_by' => 'dev@test.com',
         'snapshot_data' => null,
     ]);
 
@@ -67,16 +68,16 @@ it('rollback returns failure when no snapshot', function () {
 
 it('rollback returns failure when already rolled back', function () {
     $query = GovernedQuery::create([
-        'connection'           => 'main',
-        'sql_raw'              => 'UPDATE rb_users SET active=0 WHERE id=1',
-        'query_type'           => 'write',
-        'risk_level'           => 'low',
-        'status'               => QueryStatus::RolledBack->value,
-        'submitted_by'         => 'dev@test.com',
-        'snapshot_data'        => json_encode([['id' => 1, 'name' => 'Alice', 'active' => 1]]),
-        'query_table'       => 'rb_users',
+        'connection' => 'main',
+        'sql_raw' => 'UPDATE rb_users SET active=0 WHERE id=1',
+        'query_type' => 'write',
+        'risk_level' => 'low',
+        'status' => QueryStatus::RolledBack->value,
+        'submitted_by' => 'dev@test.com',
+        'snapshot_data' => json_encode([['id' => 1, 'name' => 'Alice', 'active' => 1]]),
+        'query_table' => 'rb_users',
         'snapshot_primary_key' => 'id',
-        'rolled_back_at'       => now(),
+        'rolled_back_at' => now(),
     ]);
 
     $result = app(RollbackService::class)->rollback($query);
@@ -88,14 +89,14 @@ it('rollback restores rows and updates status to rolled_back', function () {
     DB::connection('sqlite')->table('rb_users')->where('id', 1)->update(['active' => 0]);
 
     $query = GovernedQuery::create([
-        'connection'           => 'main',
-        'sql_raw'              => 'UPDATE rb_users SET active=0 WHERE id=1',
-        'query_type'           => 'write',
-        'risk_level'           => 'low',
-        'status'               => QueryStatus::Executed->value,
-        'submitted_by'         => 'dev@test.com',
-        'snapshot_data'        => json_encode([['id' => 1, 'name' => 'Alice', 'active' => 1]]),
-        'query_table'       => 'rb_users',
+        'connection' => 'main',
+        'sql_raw' => 'UPDATE rb_users SET active=0 WHERE id=1',
+        'query_type' => 'write',
+        'risk_level' => 'low',
+        'status' => QueryStatus::Executed->value,
+        'submitted_by' => 'dev@test.com',
+        'snapshot_data' => json_encode([['id' => 1, 'name' => 'Alice', 'active' => 1]]),
+        'query_table' => 'rb_users',
         'snapshot_primary_key' => 'id',
     ]);
 
@@ -110,4 +111,3 @@ it('rollback restores rows and updates status to rolled_back', function () {
     $query->refresh();
     expect($query->status)->toBe(QueryStatus::RolledBack->value);
 });
-

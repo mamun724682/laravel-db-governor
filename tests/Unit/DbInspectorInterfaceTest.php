@@ -14,4 +14,3 @@ it('DbInspector interface exists and declares all methods', function () {
         ->toContain('listColumns')
         ->toContain('estimateAffectedRows');
 });
-

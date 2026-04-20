@@ -1,7 +1,13 @@
 <?php
 
-use Mamun724682\DbGovernor\DTOs\{PendingQuery, QueryResult, RiskReport, SnapshotData, RollbackResult};
-use Mamun724682\DbGovernor\Enums\{QueryType, QueryStatus, RiskLevel};
+use Mamun724682\DbGovernor\DTOs\PendingQuery;
+use Mamun724682\DbGovernor\DTOs\QueryResult;
+use Mamun724682\DbGovernor\DTOs\RiskReport;
+use Mamun724682\DbGovernor\DTOs\RollbackResult;
+use Mamun724682\DbGovernor\DTOs\SnapshotData;
+use Mamun724682\DbGovernor\Enums\QueryStatus;
+use Mamun724682\DbGovernor\Enums\QueryType;
+use Mamun724682\DbGovernor\Enums\RiskLevel;
 
 // --- DTOs ---
 it('creates PendingQuery DTO', function () {
@@ -59,4 +65,3 @@ it('RiskLevel escalateTo returns highest level', function () {
     expect(RiskLevel::High->escalateTo(RiskLevel::Low))->toBe(RiskLevel::High);
     expect(RiskLevel::Critical->escalateTo(RiskLevel::High))->toBe(RiskLevel::Critical);
 });
-

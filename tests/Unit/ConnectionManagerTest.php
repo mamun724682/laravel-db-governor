@@ -1,15 +1,16 @@
 <?php
 
-use Mamun724682\DbGovernor\Drivers\{MySqlInspector, PgsqlInspector, SqliteInspector};
+use Illuminate\Database\Connection;
+use Mamun724682\DbGovernor\Drivers\SqliteInspector;
 use Mamun724682\DbGovernor\Exceptions\InvalidConnectionException;
 use Mamun724682\DbGovernor\Services\ConnectionManager;
 
 beforeEach(function () {
     config(['db-governor.connections' => [
-        'main'   => 'sqlite',
+        'main' => 'sqlite',
         'legacy' => 'sqlite',
     ]]);
-    $this->manager = new ConnectionManager();
+    $this->manager = new ConnectionManager;
 });
 
 it('allKeys returns all configured connection keys', function () {
@@ -27,7 +28,7 @@ it('all returns the connections map', function () {
 
 it('resolve returns a DB Connection for a valid key', function () {
     $conn = $this->manager->resolve('main');
-    expect($conn)->toBeInstanceOf(\Illuminate\Database\Connection::class);
+    expect($conn)->toBeInstanceOf(Connection::class);
 });
 
 it('resolve throws InvalidConnectionException for unknown key', function () {
@@ -46,4 +47,3 @@ it('inspector throws for unsupported driver', function () {
     config(['db-governor.connections' => ['bad' => 'unsupported_driver']]);
     expect(method_exists($this->manager, 'inspector'))->toBeTrue();
 });
-

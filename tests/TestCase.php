@@ -16,11 +16,10 @@ class TestCase extends OrchestraTestCase
     {
         $app['config']->set('database.default', 'sqlite');
         $app['config']->set('database.connections.sqlite', [
-            'driver'   => 'sqlite',
+            'driver' => 'sqlite',
             'database' => ':memory:',
-            'prefix'   => '',
+            'prefix' => '',
         ]);
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
     }
 }
-
