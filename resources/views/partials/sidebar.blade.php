@@ -34,13 +34,54 @@
                     >
                     <ul class="space-y-0.5">
                         @foreach ($tables as $table)
-                            <li x-show="!tableSearch || '{{ $table }}'.toLowerCase().includes(tableSearch.toLowerCase())">
-                                <a
-                                    href="{{ route('db-governor.table.show', ['token' => $token, 'connection' => $currentConnection, 'table' => $table]) }}"
-                                    class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 hover:text-indigo-600 transition truncate"
-                                >
-                                    🗄 {{ $table }}
-                                </a>
+                            <li
+                                x-data="{ open: false, cols: [], loading: false, loaded: false }"
+                                x-show="!tableSearch || '{{ $table }}'.toLowerCase().includes(tableSearch.toLowerCase())"
+                            >
+                                <div class="flex items-center gap-1 rounded-lg px-2 py-1.5 hover:bg-gray-50 group transition">
+                                    {{-- Expand toggle --}}
+                                    <button
+                                        type="button"
+                                        @click="
+                                            open = !open;
+                                            if (open && !loaded) {
+                                                loading = true;
+                                                fetch('{{ route('db-governor.schema.table', ['token' => $token, 'connection' => $currentConnection, 'table' => '__T__']) }}'.replace('__T__', '{{ $table }}'))
+                                                    .then(r => r.json())
+                                                    .then(d => { cols = d.columns || []; loaded = true; loading = false; })
+                                                    .catch(() => { loading = false; });
+                                            }
+                                        "
+                                        class="flex-shrink-0 text-gray-400 hover:text-indigo-500 transition w-4 h-4 flex items-center justify-center"
+                                        :title="open ? 'Collapse' : 'Expand columns'"
+                                    >
+                                        <svg x-show="!open" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                        <svg x-show="open" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                    </button>
+
+                                    {{-- Table link --}}
+                                    <a
+                                        href="{{ route('db-governor.table.show', ['token' => $token, 'connection' => $currentConnection, 'table' => $table]) }}"
+                                        class="flex-1 flex items-center gap-1.5 text-xs text-gray-600 hover:text-indigo-600 transition truncate"
+                                    >
+                                        🗄 {{ $table }}
+                                    </a>
+                                </div>
+
+                                {{-- Columns sub-list --}}
+                                <div x-show="open" x-cloak class="ml-5 mt-0.5 mb-1 space-y-0.5">
+                                    <template x-if="loading">
+                                        <p class="text-xs text-gray-400 italic px-2">Loading…</p>
+                                    </template>
+                                    <template x-for="col in cols" :key="col.name">
+                                        <div class="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs text-gray-500 hover:bg-gray-50">
+                                            <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                                :class="col.required ? 'bg-red-400' : 'bg-gray-300'"></span>
+                                            <span class="truncate font-mono" x-text="col.name"></span>
+                                            <span class="text-gray-400 truncate ml-auto max-w-[60px]" x-text="col.type"></span>
+                                        </div>
+                                    </template>
+                                </div>
                             </li>
                         @endforeach
                     </ul>
