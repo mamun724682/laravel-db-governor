@@ -628,7 +628,7 @@
                         </div>
                     </template>
 
-                    {{-- INSERT: auto-populate all columns, value input only --}}
+                    {{-- INSERT: col selector + value, pre-filled with all non-id columns --}}
                     <template x-if="qbType === 'INSERT'">
                         <div class="space-y-3">
                             <template x-if="!qbTable">
@@ -639,22 +639,26 @@
                             </template>
                             <template x-if="qbColumns.length > 0">
                                 <div class="space-y-2">
-                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Values</label>
-                                    <template x-for="(col, i) in qbColumns" :key="col.name">
-                                        <div class="flex gap-3 items-start">
-                                            <span class="w-36 text-xs font-mono text-gray-700 truncate flex-shrink-0 pt-1.5" x-text="col.name + (col.type ? ' (' + col.type + ')' : '')"></span>
-                                            <span class="text-gray-300 text-xs pt-1.5">=</span>
-                                            <template x-if="isJsonCol(col.type)">
-                                                <textarea :placeholder="col.type || 'value'"
-                                                    x-model="qbInsertRows[i].val"
-                                                    rows="2"
-                                                    class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-y"></textarea>
+                                    <div class="flex items-center justify-between">
+                                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Values</label>
+                                        <button type="button" @click="qbInsertRows.push({col:'',val:''})" class="text-xs text-indigo-600 hover:text-indigo-800">+ Add column</button>
+                                    </div>
+                                    <template x-for="(row, i) in qbInsertRows" :key="i">
+                                        <div class="flex gap-2 items-center">
+                                            <select x-model="row.col" class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                                <option value="">— column —</option>
+                                                <template x-for="col in qbColumns" :key="col.name">
+                                                    <option :value="col.name" x-text="col.name + (col.type ? ' (' + col.type + ')' : '')"></option>
+                                                </template>
+                                            </select>
+                                            <span class="text-gray-400 text-xs">=</span>
+                                            <template x-if="isJsonCol(colTypeByName(row.col))">
+                                                <textarea x-model="row.val" placeholder="JSON value" rows="2" class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-y"></textarea>
                                             </template>
-                                            <template x-if="!isJsonCol(col.type)">
-                                                <input :type="inputTypeFor(col.type)" :placeholder="col.type || 'value'"
-                                                    x-model="qbInsertRows[i].val"
-                                                    class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                            <template x-if="!isJsonCol(colTypeByName(row.col))">
+                                                <input :type="inputTypeFor(colTypeByName(row.col))" x-model="row.val" placeholder="value" class="flex-1 rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                                             </template>
+                                            <button type="button" @click="qbInsertRows.splice(i,1)" class="text-gray-400 hover:text-red-500 text-xs">✕</button>
                                         </div>
                                     </template>
                                 </div>
@@ -861,7 +865,7 @@ function sqlConsole() {
                 const res = await fetch('{{ route('db-governor.schema.table', ['token' => $token, 'connection' => $currentConnection, 'table' => '__TABLE__']) }}'.replace('__TABLE__', tbl));
                 const data = await res.json();
                 this.qbColumns = data.columns || [];
-                this.qbInsertRows = this.qbColumns.map(c => ({col: c.name, val: ''}));
+                this.qbInsertRows = this.qbColumns.filter(c => c.name !== 'id').map(c => ({col: c.name, val: ''}));
             } catch (e) {}
         },
         generateSql() {
