@@ -3,13 +3,18 @@
     "description": "Production-safety database governance layer for Laravel",
     "type": "library",
     "require": {
-        "php": "^8.4",
-        "laravel/framework": "^13"
+        "php": "^8.1",
+        "illuminate/database": "^10|^11|^12|^13",
+        "illuminate/http": "^10|^11|^12|^13",
+        "illuminate/pagination": "^10|^11|^12|^13",
+        "illuminate/support": "^10|^11|^12|^13",
+        "illuminate/view": "^10|^11|^12|^13"
     },
     "require-dev": {
-        "orchestra/testbench": "^11.0",
-        "pestphp/pest": "^4",
-        "pestphp/pest-plugin-laravel": "^4",
+        "laravel/framework": "^10|^11|^12|^13",
+        "orchestra/testbench": "^8|^9|^10|^11",
+        "pestphp/pest": "^2|^3|^4",
+        "pestphp/pest-plugin-laravel": "^2|^3|^4",
         "mockery/mockery": "^1.6"
     },
     "autoload": {
@@ -35,6 +40,3 @@
     "minimum-stability": "dev",
     "prefer-stable": true
 }
-
-
-
