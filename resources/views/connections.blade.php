@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DB Governor — Select Connection</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="{{ route('db-governor.assets', 'tailwind.js') }}"></script>
+    <script defer src="{{ route('db-governor.assets', 'alpine.min.js') }}"></script>
 </head>
 <body class="min-h-screen bg-gray-100 flex items-center justify-center p-6">
 

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Mamun724682\DbGovernor\Http\Controllers\AssetController;
 use Mamun724682\DbGovernor\Http\Controllers\AuthController;
 use Mamun724682\DbGovernor\Http\Controllers\ConnectionController;
 use Mamun724682\DbGovernor\Http\Controllers\DashboardController;
@@ -15,6 +16,11 @@ $middleware = config('db-governor.middleware', ['web']);
 Route::prefix($prefix)
     ->middleware($middleware)
     ->group(function () {
+        // Static assets (JS/CSS bundled with the package — no CDN)
+        Route::get('/assets/{file}', [AssetController::class, 'serve'])
+            ->name('db-governor.assets')
+            ->where('file', '[a-zA-Z0-9._-]+');
+
         // Public login routes
         Route::get('/login', [AuthController::class, 'showLogin'])
             ->name('db-governor.login');

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DB Governor — Login</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{{ route('db-governor.assets', 'tailwind.js') }}"></script>
 </head>
 <body class="min-h-screen bg-gray-100 flex items-center justify-center">
 
