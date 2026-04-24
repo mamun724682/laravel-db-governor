@@ -42,10 +42,6 @@ class DbGovernorServiceProvider extends ServiceProvider
             __DIR__.'/../config/db-governor.php' => config_path('db-governor.php'),
         ], 'db-governor-config');
 
-        $this->publishes([
-            __DIR__.'/../resources/views' => resource_path('views/vendor/db-governor'),
-        ], 'db-governor-views');
-
         View::composer('db-governor::*', function ($view) {
             $request = request();
             $guard = app(AccessGuard::class);
