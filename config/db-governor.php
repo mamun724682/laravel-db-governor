@@ -24,7 +24,7 @@ return [
     // Single:   ['prod' => env('DB_CONNECTION', 'mysql')]
     // Multiple: ['main' => 'mysql', 'replica' => 'mysql_read', 'legacy' => 'pgsql']
     'connections' => [
-        env('DB_GOVERNOR_CONNECTION_KEY', 'main') => env('DB_GOVERNOR_CONNECTION', 'mysql'),
+        env('DB_GOVERNOR_CONNECTION_KEY', 'main') => env('DB_GOVERNOR_CONNECTION', env('DB_CONNECTION', 'mysql')),
     ],
 
     // Regex patterns that BLOCK a query outright (status set to 'blocked').
