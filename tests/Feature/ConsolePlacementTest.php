@@ -13,14 +13,12 @@ beforeEach(function () {
         'db-governor.hidden_tables' => [],
     ]);
 
-    $guard = app(AccessGuard::class);
-    $this->token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($this->token));
+    $this->token = $this->loginAsGuard('admin@test.com');
 });
 
 it('dashboard no longer contains the SQL console textarea', function () {
     $html = $this->get(route('db-governor.dashboard', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     // The SQL console should NOT be on the dashboard
@@ -29,7 +27,7 @@ it('dashboard no longer contains the SQL console textarea', function () {
 
 it('dashboard still shows analytics stat cards', function () {
     $html = $this->get(route('db-governor.dashboard', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     // Analytics summary cards must still be present
@@ -40,7 +38,7 @@ it('dashboard still shows analytics stat cards', function () {
 
 it('queries page has an Open SQL Console button', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)->toContain('SQL Console');
@@ -48,7 +46,7 @@ it('queries page has an Open SQL Console button', function () {
 
 it('queries page contains the SQL execution endpoint', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)->toContain('db-governor.sql.execute');

@@ -14,9 +14,7 @@ beforeEach(function () {
         'db-governor.path' => 'db-governor',
     ]);
 
-    $guard = app(AccessGuard::class);
-    $this->token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($this->token));
+    $this->token = $this->loginAsGuard('admin@test.com');
 });
 
 it('queries JSON data includes connection field', function () {
@@ -27,7 +25,7 @@ it('queries JSON data includes connection field', function () {
     ]);
 
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     // The JS data embedded in the page must have the connection field
@@ -46,7 +44,7 @@ it('queries page embeds snapshot fields in modal data', function () {
     ]);
 
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)->toContain('query_table')
@@ -65,7 +63,7 @@ it('rollback button is rendered for executed query with snapshot', function () {
     ]);
 
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     // The rollback form or button must be conditionally rendered when snapshot_data exists
@@ -75,7 +73,7 @@ it('rollback button is rendered for executed query with snapshot', function () {
 
 it('queries page shows no snapshot message when snapshot is null', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     // Should have a conditional for no-snapshot state

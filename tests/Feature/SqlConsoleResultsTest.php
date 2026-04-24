@@ -24,9 +24,7 @@ beforeEach(function () {
         ['id' => 3, 'label' => 'Alpha', 'meta' => null], // duplicate value to catch key collision
     ]);
 
-    $guard = app(AccessGuard::class);
-    $this->token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($this->token));
+    $this->token = $this->loginAsGuard('admin@test.com');
 });
 
 afterEach(function () {
@@ -35,7 +33,7 @@ afterEach(function () {
 
 it('SQL execute returns rows with correct values including null', function () {
     $response = $this->post(
-        route('db-governor.sql.execute', ['token' => $this->token, 'connection' => 'main']),
+        route('db-governor.sql.execute', ['connection' => 'main']),
         ['sql' => 'SELECT * FROM res_tbl ORDER BY id']
     )->assertOk()->json();
 
@@ -48,7 +46,7 @@ it('SQL execute returns rows with correct values including null', function () {
 
 it('SQL execute returns JSON column as a string value', function () {
     $response = $this->post(
-        route('db-governor.sql.execute', ['token' => $this->token, 'connection' => 'main']),
+        route('db-governor.sql.execute', ['connection' => 'main']),
         ['sql' => 'SELECT * FROM res_tbl WHERE id = 1']
     )->assertOk()->json();
 
@@ -58,7 +56,7 @@ it('SQL execute returns JSON column as a string value', function () {
 
 it('queries page results table uses index-based key for row cells', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     // The x-for on table cells must use an index key, not the value itself
@@ -68,7 +66,7 @@ it('queries page results table uses index-based key for row cells', function () 
 
 it('queries page results table renders NULL values with a null badge expression', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     // Must have a conditional for null values

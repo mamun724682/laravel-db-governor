@@ -18,9 +18,7 @@ beforeEach(function () {
         'CREATE TABLE IF NOT EXISTS ac_users (id INTEGER PRIMARY KEY, email TEXT, name TEXT)'
     );
 
-    $guard = app(AccessGuard::class);
-    $this->token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($this->token));
+    $this->token = $this->loginAsGuard('admin@test.com');
 });
 
 afterEach(function () {
@@ -29,7 +27,7 @@ afterEach(function () {
 
 it('queries page embeds the list of table names for autocomplete', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     // Table names must be embedded as a JS array so the autocomplete can use them
@@ -39,7 +37,7 @@ it('queries page embeds the list of table names for autocomplete', function () {
 
 it('queries page embeds SQL keywords for autocomplete', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     // Must contain common SQL verbs in the autocomplete list
@@ -51,7 +49,6 @@ it('queries page embeds SQL keywords for autocomplete', function () {
 
 it('schema endpoint returns columns used for column-level autocomplete', function () {
     $response = $this->get(route('db-governor.schema.table', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'ac_users',
     ]))->assertOk()->json();

@@ -17,12 +17,13 @@ class DbGovernanceAccess
 
     public function handle(Request $request, Closure $next): Response
     {
-        $token = (string) $request->route('token');
+        $token = (string) session('dbg_token', '');
 
         try {
             $payload = $this->guard->validateToken($token);
             $this->guard->setPayload($payload);
         } catch (\RuntimeException $e) {
+            session()->forget('dbg_token');
             return redirect()->route('db-governor.login')
                 ->with('error', $e->getMessage());
         }
@@ -30,7 +31,8 @@ class DbGovernanceAccess
         $connectionKey = $request->route('connection');
 
         if ($connectionKey !== null && ! $this->connectionManager->isValidKey((string) $connectionKey)) {
-            abort(404);
+            return redirect()->route('db-governor.connections.pick')
+                ->with('error', 'Invalid connection.');
         }
 
         return $next($request);

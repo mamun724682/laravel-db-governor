@@ -24,7 +24,7 @@ class SqlController
         private readonly AccessGuard $guard,
     ) {}
 
-    public function execute(Request $request, string $token, string $connection): JsonResponse
+    public function execute(Request $request, string $connection): JsonResponse
     {
         $request->validate(['sql' => ['required', 'string', 'not_regex:/^\s*$/']]);
 

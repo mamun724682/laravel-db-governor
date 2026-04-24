@@ -24,10 +24,9 @@ it('connections view lists all connections', function () {
         ],
     ]);
 
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('admin@example.com');
+    $token = $this->loginAsGuard('admin@example.com');
 
-    $this->get(route('db-governor.connections.pick', ['token' => $token]))
+    $this->get(route('db-governor.connections.pick'))
         ->assertOk()
         ->assertSee('primary', false)
         ->assertSee('secondary', false)

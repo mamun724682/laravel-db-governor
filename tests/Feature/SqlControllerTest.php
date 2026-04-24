@@ -17,15 +17,13 @@ beforeEach(function () {
         'db-governor.dry_run_enabled' => false,
     ]);
 
-    $guard = app(AccessGuard::class);
-    $this->token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($this->token));
+    $this->token = $this->loginAsGuard('admin@test.com');
 });
 
 // ── hidden table block ─────────────────────────────────────────────────────
 
 it('returns blocked JSON when SQL references a hidden table', function () {
-    $this->post(route('db-governor.sql.execute', ['token' => $this->token, 'connection' => 'main']), [
+    $this->post(route('db-governor.sql.execute', ['connection' => 'main']), [
         'sql' => 'SELECT * FROM secret_table',
     ])
         ->assertOk()
@@ -33,7 +31,7 @@ it('returns blocked JSON when SQL references a hidden table', function () {
 });
 
 it('returns blocked JSON for hidden table referenced in a JOIN', function () {
-    $this->post(route('db-governor.sql.execute', ['token' => $this->token, 'connection' => 'main']), [
+    $this->post(route('db-governor.sql.execute', ['connection' => 'main']), [
         'sql' => 'SELECT u.* FROM users u JOIN jobs j ON u.id = j.user_id',
     ])
         ->assertOk()
@@ -41,7 +39,7 @@ it('returns blocked JSON for hidden table referenced in a JOIN', function () {
 });
 
 it('blocked response contains a descriptive message', function () {
-    $response = $this->post(route('db-governor.sql.execute', ['token' => $this->token, 'connection' => 'main']), [
+    $response = $this->post(route('db-governor.sql.execute', ['connection' => 'main']), [
         'sql' => 'SELECT * FROM secret_table',
     ])->assertOk()->json();
 
@@ -52,7 +50,7 @@ it('blocked response contains a descriptive message', function () {
 // ── unknown table SQL error ────────────────────────────────────────────────
 
 it('returns success false with error string for a non-existent table', function () {
-    $response = $this->post(route('db-governor.sql.execute', ['token' => $this->token, 'connection' => 'main']), [
+    $response = $this->post(route('db-governor.sql.execute', ['connection' => 'main']), [
         'sql' => 'SELECT * FROM nonexistent_xyz_table_abc',
     ])->assertOk()->json();
 
@@ -61,7 +59,7 @@ it('returns success false with error string for a non-existent table', function 
 });
 
 it('error message for unknown table is not empty and is a string not an array', function () {
-    $response = $this->post(route('db-governor.sql.execute', ['token' => $this->token, 'connection' => 'main']), [
+    $response = $this->post(route('db-governor.sql.execute', ['connection' => 'main']), [
         'sql' => 'SELECT * FROM totally_missing_table',
     ])->assertOk()->json();
 
@@ -77,7 +75,7 @@ it('returns rows successfully for a valid SELECT on a visible table', function (
     );
     DB::connection('sqlite')->table('sql_test_tbl')->insert(['name' => 'Alice']);
 
-    $response = $this->post(route('db-governor.sql.execute', ['token' => $this->token, 'connection' => 'main']), [
+    $response = $this->post(route('db-governor.sql.execute', ['connection' => 'main']), [
         'sql' => 'SELECT * FROM sql_test_tbl',
     ])->assertOk()->json();
 
@@ -90,7 +88,7 @@ it('returns rows successfully for a valid SELECT on a visible table', function (
 });
 
 it('returns write type for a write query without executing it', function () {
-    $response = $this->post(route('db-governor.sql.execute', ['token' => $this->token, 'connection' => 'main']), [
+    $response = $this->post(route('db-governor.sql.execute', ['connection' => 'main']), [
         'sql' => 'UPDATE users SET active = 0 WHERE id = 1',
     ])->assertOk()->json();
 

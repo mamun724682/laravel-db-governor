@@ -27,7 +27,7 @@
                 @foreach ($tables as $table)
                     <li>
                         <a
-                            href="{{ route('db-governor.table.show', ['token' => $token, 'connection' => $currentConnection, 'table' => $table]) }}"
+                            href="{{ route('db-governor.table.show', ['connection' => $currentConnection, 'table' => $table]) }}"
                             class="block rounded-lg border border-gray-100 bg-gray-50 hover:bg-indigo-50 hover:border-indigo-200 px-3 py-2 text-xs font-medium text-gray-700 hover:text-indigo-700 transition truncate"
                         >
                             🗄 {{ $table }}

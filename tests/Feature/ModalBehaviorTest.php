@@ -13,16 +13,13 @@ beforeEach(function () {
         'db-governor.hidden_tables' => [],
     ]);
 
-    $guard = app(AccessGuard::class);
-    $this->token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($this->token));
+    $this->token = $this->loginAsGuard('admin@test.com');
 });
 
 // ── queries detail modal ───────────────────────────────────────────────────
 
 it('queries modal backdrop has a click handler to close modal', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token,
         'connection' => 'main',
     ]))->assertOk()->getContent();
 
@@ -33,7 +30,6 @@ it('queries modal backdrop has a click handler to close modal', function () {
 
 it('queries modal backdrop has keyboard ESC handler', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token,
         'connection' => 'main',
     ]))->assertOk()->getContent();
 
@@ -42,7 +38,6 @@ it('queries modal backdrop has keyboard ESC handler', function () {
 
 it('queries modal inner content stops click propagation to backdrop', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token,
         'connection' => 'main',
     ]))->assertOk()->getContent();
 
@@ -54,7 +49,6 @@ it('queries modal inner content stops click propagation to backdrop', function (
 
 it('write modal backdrop has a click handler to close modal', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token,
         'connection' => 'main',
     ]))->assertOk()->getContent();
 
@@ -64,7 +58,6 @@ it('write modal backdrop has a click handler to close modal', function () {
 
 it('write modal backdrop has keyboard ESC handler', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token,
         'connection' => 'main',
     ]))->assertOk()->getContent();
 
@@ -73,7 +66,6 @@ it('write modal backdrop has keyboard ESC handler', function () {
 
 it('write modal inner content stops click propagation to backdrop', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token,
         'connection' => 'main',
     ]))->assertOk()->getContent();
 
@@ -84,7 +76,6 @@ it('write modal inner content stops click propagation to backdrop', function () 
 
 it('write modal form action does not contain the string "undefined"', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token,
         'connection' => 'main',
     ]))->assertOk()->getContent();
 
@@ -94,9 +85,10 @@ it('write modal form action does not contain the string "undefined"', function (
 
 it('write modal form action contains the current token', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token,
         'connection' => 'main',
     ]))->assertOk()->getContent();
 
-    expect($html)->toContain($this->token);
+    // Token is stored in session; write modal form action should NOT expose the raw token in HTML
+    expect($html)->not->toContain($this->token);
+    expect($html)->toContain(route('db-governor.queries.store', ['connection' => 'main']));
 });

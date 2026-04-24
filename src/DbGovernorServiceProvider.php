@@ -54,14 +54,14 @@ class DbGovernorServiceProvider extends ServiceProvider
                 $guardRole = null;
             }
 
+            $isLoggedIn = session()->has('dbg_token');
+
             $view->with([
-                'token' => $request->route('token'),
                 'currentConnection' => $request->route('connection'),
-                'tokenBaseUrl' => $request->route('token')
-                    ? url(config('db-governor.path', 'db-governor').'/'.$request->route('token'))
-                    : null,
-                'guardEmail' => $guardEmail,
-                'guardRole' => $guardRole,
+                'baseUrl'           => url(config('db-governor.path', 'db-governor')),
+                'guardEmail'        => $guardEmail,
+                'guardRole'         => $guardRole,
+                'isLoggedIn'        => $isLoggedIn,
             ]);
         });
     }

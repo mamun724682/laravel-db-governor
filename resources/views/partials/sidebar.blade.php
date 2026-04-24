@@ -2,11 +2,11 @@
     <div class="flex-1">
         <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">Navigation</p>
 
-        @if ($token && $currentConnection)
+        @if ($isLoggedIn && $currentConnection)
             <ul class="space-y-1 mb-6">
                 <li>
                     <a
-                        href="{{ route('db-governor.dashboard', ['token' => $token, 'connection' => $currentConnection]) }}"
+                        href="{{ route('db-governor.dashboard', ['connection' => $currentConnection]) }}"
                         class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
                     >
                         📊 Dashboard
@@ -14,7 +14,7 @@
                 </li>
                 <li>
                     <a
-                        href="{{ route('db-governor.queries', ['token' => $token, 'connection' => $currentConnection]) }}"
+                        href="{{ route('db-governor.queries', ['connection' => $currentConnection]) }}"
                         class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
                     >
                         📋 Query Log
@@ -46,7 +46,7 @@
                                             open = !open;
                                             if (open && !loaded) {
                                                 loading = true;
-                                                fetch('{{ route('db-governor.schema.table', ['token' => $token, 'connection' => $currentConnection, 'table' => '__T__']) }}'.replace('__T__', '{{ $table }}'))
+                                                fetch('{{ route('db-governor.schema.table', ['connection' => $currentConnection, 'table' => '__T__']) }}'.replace('__T__', '{{ $table }}'))
                                                     .then(r => r.json())
                                                     .then(d => { cols = d.columns || []; loaded = true; loading = false; })
                                                     .catch(() => { loading = false; });
@@ -61,7 +61,7 @@
 
                                     {{-- Table link --}}
                                     <a
-                                        href="{{ route('db-governor.table.show', ['token' => $token, 'connection' => $currentConnection, 'table' => $table]) }}"
+                                        href="{{ route('db-governor.table.show', ['connection' => $currentConnection, 'table' => $table]) }}"
                                         class="flex-1 flex items-center gap-1.5 text-xs text-gray-600 hover:text-indigo-600 transition truncate"
                                     >
                                         🗄 {{ $table }}
@@ -91,8 +91,8 @@
     </div>
 
     <div class="pt-4 border-t border-gray-200 mt-4">
-        @if ($token)
-            <form method="POST" action="{{ route('db-governor.logout', ['token' => $token]) }}">
+        @if ($isLoggedIn)
+            <form method="POST" action="{{ route('db-governor.logout') }}">
                 @csrf
                 <button
                     type="submit"

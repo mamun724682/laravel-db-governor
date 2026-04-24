@@ -13,7 +13,7 @@ class SchemaController
         private readonly ConnectionManager $connectionManager,
     ) {}
 
-    public function table(Request $request, string $token, string $connection, string $table): JsonResponse
+    public function table(Request $request, string $connection, string $table): JsonResponse
     {
         $hidden = config('db-governor.hidden_tables', []);
 

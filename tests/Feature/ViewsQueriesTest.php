@@ -22,20 +22,18 @@ it('queries page lists governed queries with status badges', function () {
         'submitted_by' => 'dev@test.com',
     ]);
 
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('admin@test.com');
+    $token = $this->loginAsGuard('admin@test.com');
 
-    $this->get(route('db-governor.queries', ['token' => $token, 'connection' => 'main']))
+    $this->get(route('db-governor.queries', ['connection' => 'main']))
         ->assertOk()
         ->assertSee('My Query')
         ->assertSee('PENDING');
 });
 
 it('queries page extends layout', function () {
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('admin@test.com');
+    $token = $this->loginAsGuard('admin@test.com');
 
-    $this->get(route('db-governor.queries', ['token' => $token, 'connection' => 'main']))
+    $this->get(route('db-governor.queries', ['connection' => 'main']))
         ->assertOk()
         ->assertSee('DB Governance');
 });
@@ -51,10 +49,9 @@ it('queries page shows action modal markup for admin', function () {
         'submitted_by' => 'dev@test.com',
     ]);
 
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('admin@test.com');
+    $token = $this->loginAsGuard('admin@test.com');
 
-    $this->get(route('db-governor.queries', ['token' => $token, 'connection' => 'main']))
+    $this->get(route('db-governor.queries', ['connection' => 'main']))
         ->assertOk()
         ->assertSee('Approve', false)
         ->assertSee('Reject', false);

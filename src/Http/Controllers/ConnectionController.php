@@ -11,7 +11,7 @@ class ConnectionController
 {
     public function __construct(private readonly ConnectionManager $connectionManager) {}
 
-    public function pick(Request $request, string $token): View|RedirectResponse
+    public function pick(Request $request): View|RedirectResponse
     {
         $connections = $this->connectionManager->all();
 
@@ -19,11 +19,10 @@ class ConnectionController
             $key = array_key_first($connections);
 
             return redirect()->route('db-governor.dashboard', [
-                'token' => $token,
                 'connection' => $key,
             ]);
         }
 
-        return view('db-governor::connections', compact('connections', 'token'));
+        return view('db-governor::connections', compact('connections'));
     }
 }

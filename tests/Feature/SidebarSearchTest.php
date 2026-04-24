@@ -13,14 +13,12 @@ beforeEach(function () {
         'db-governor.hidden_tables' => [],
     ]);
 
-    $guard = app(AccessGuard::class);
-    $this->token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($this->token));
+    $this->token = $this->loginAsGuard('admin@test.com');
 });
 
 it('dashboard page renders a sidebar table search input', function () {
     $html = $this->get(route('db-governor.dashboard', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)->toContain('table-search');
@@ -28,7 +26,7 @@ it('dashboard page renders a sidebar table search input', function () {
 
 it('queries page renders a sidebar table search input', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)->toContain('table-search');
@@ -36,7 +34,7 @@ it('queries page renders a sidebar table search input', function () {
 
 it('sidebar search input has an Alpine x-model binding', function () {
     $html = $this->get(route('db-governor.dashboard', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)->toContain('tableSearch');
@@ -44,7 +42,7 @@ it('sidebar search input has an Alpine x-model binding', function () {
 
 it('sidebar table list items have an x-show filter expression', function () {
     $html = $this->get(route('db-governor.dashboard', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)->toContain('tableSearch');

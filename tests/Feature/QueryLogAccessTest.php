@@ -38,12 +38,9 @@ beforeEach(function () {
 // ── employee scope ─────────────────────────────────────────────────────────
 
 it('employee sees only their own queries', function () {
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('dev@test.com');
-    $guard->setPayload($guard->validateToken($token));
+    $token = $this->loginAsGuard('dev@test.com');
 
     $queries = $this->get(route('db-governor.queries', [
-        'token' => $token,
         'connection' => 'main',
     ]))->assertOk()->viewData('queries');
 
@@ -52,12 +49,9 @@ it('employee sees only their own queries', function () {
 });
 
 it('employee cannot see another employee\'s queries', function () {
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('dev@test.com');
-    $guard->setPayload($guard->validateToken($token));
+    $token = $this->loginAsGuard('dev@test.com');
 
     $queries = $this->get(route('db-governor.queries', [
-        'token' => $token,
         'connection' => 'main',
     ]))->assertOk()->viewData('queries');
 
@@ -66,13 +60,10 @@ it('employee cannot see another employee\'s queries', function () {
 });
 
 it('employee submitted_by filter param is ignored (always scoped to self)', function () {
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('dev@test.com');
-    $guard->setPayload($guard->validateToken($token));
+    $token = $this->loginAsGuard('dev@test.com');
 
     // Even if an employee passes ?submitted_by=analyst, they only see their own
     $queries = $this->get(route('db-governor.queries', [
-        'token' => $token,
         'connection' => 'main',
         'submitted_by' => 'analyst@test.com',
     ]))->assertOk()->viewData('queries');
@@ -84,12 +75,9 @@ it('employee submitted_by filter param is ignored (always scoped to self)', func
 // ── admin scope ────────────────────────────────────────────────────────────
 
 it('admin sees all queries across all users', function () {
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($token));
+    $token = $this->loginAsGuard('admin@test.com');
 
     $queries = $this->get(route('db-governor.queries', [
-        'token' => $token,
         'connection' => 'main',
     ]))->assertOk()->viewData('queries');
 
@@ -97,12 +85,9 @@ it('admin sees all queries across all users', function () {
 });
 
 it('admin can filter queries by submitted_by email', function () {
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($token));
+    $token = $this->loginAsGuard('admin@test.com');
 
     $queries = $this->get(route('db-governor.queries', [
-        'token' => $token,
         'connection' => 'main',
         'submitted_by' => 'analyst@test.com',
     ]))->assertOk()->viewData('queries');
@@ -112,12 +97,9 @@ it('admin can filter queries by submitted_by email', function () {
 });
 
 it('admin submitted_by filter with unknown email returns empty results', function () {
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($token));
+    $token = $this->loginAsGuard('admin@test.com');
 
     $queries = $this->get(route('db-governor.queries', [
-        'token' => $token,
         'connection' => 'main',
         'submitted_by' => 'nobody@example.com',
     ]))->assertOk()->viewData('queries');
@@ -128,12 +110,9 @@ it('admin submitted_by filter with unknown email returns empty results', functio
 // ── submitters list from config ─────────────────────────────────────────────
 
 it('admin receives a submitters list built from config admins and employees', function () {
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($token));
+    $token = $this->loginAsGuard('admin@test.com');
 
     $submitters = $this->get(route('db-governor.queries', [
-        'token' => $token,
         'connection' => 'main',
     ]))->assertOk()->viewData('submitters');
 
@@ -150,12 +129,9 @@ it('submitters list contains no duplicates', function () {
         'db-governor.allowed.employees' => ['admin@test.com', 'dev@test.com'],
     ]);
 
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($token));
+    $token = $this->loginAsGuard('admin@test.com');
 
     $submitters = $this->get(route('db-governor.queries', [
-        'token' => $token,
         'connection' => 'main',
     ]))->assertOk()->viewData('submitters');
 
@@ -163,12 +139,9 @@ it('submitters list contains no duplicates', function () {
 });
 
 it('employee receives an empty submitters list (no filter UI shown)', function () {
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('dev@test.com');
-    $guard->setPayload($guard->validateToken($token));
+    $token = $this->loginAsGuard('dev@test.com');
 
     $submitters = $this->get(route('db-governor.queries', [
-        'token' => $token,
         'connection' => 'main',
     ]))->assertOk()->viewData('submitters');
 
@@ -178,12 +151,9 @@ it('employee receives an empty submitters list (no filter UI shown)', function (
 // ── isAdmin flag passed to view ─────────────────────────────────────────────
 
 it('isAdmin is true in view for admin user', function () {
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($token));
+    $token = $this->loginAsGuard('admin@test.com');
 
     $isAdmin = $this->get(route('db-governor.queries', [
-        'token' => $token,
         'connection' => 'main',
     ]))->assertOk()->viewData('isAdmin');
 
@@ -191,12 +161,9 @@ it('isAdmin is true in view for admin user', function () {
 });
 
 it('isAdmin is false in view for employee user', function () {
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('dev@test.com');
-    $guard->setPayload($guard->validateToken($token));
+    $token = $this->loginAsGuard('dev@test.com');
 
     $isAdmin = $this->get(route('db-governor.queries', [
-        'token' => $token,
         'connection' => 'main',
     ]))->assertOk()->viewData('isAdmin');
 

@@ -45,7 +45,6 @@
 
     {{-- Filters --}}
     <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-3 mb-6 bg-white rounded-xl border border-gray-100 shadow px-4 py-3">
-        <input type="hidden" name="token" value="{{ $token }}">
         <input type="hidden" name="connection" value="{{ $currentConnection }}">
         <input type="hidden" name="tab" value="{{ $tab }}">
 
@@ -109,7 +108,7 @@
         @endif
 
         <button type="submit" class="rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-1.5 transition">Filter</button>
-        <a href="{{ route('db-governor.queries', ['token' => $token, 'connection' => $currentConnection, 'tab' => $tab]) }}" class="text-sm text-gray-400 hover:text-gray-600">Clear</a>
+        <a href="{{ route('db-governor.queries', ['connection' => $currentConnection, 'tab' => $tab]) }}" class="text-sm text-gray-400 hover:text-gray-600">Clear</a>
     </form>
 
     {{-- Queries table --}}
@@ -156,7 +155,7 @@
                             <td class="px-4 py-3 text-xs text-gray-400 font-mono">{{ $query->connection ?? '—' }}</td>
                             <td class="px-4 py-3 text-xs">
                                 @if ($query->query_table)
-                                    <a href="{{ route('db-governor.table.show', ['token' => $token, 'connection' => $currentConnection, 'table' => $query->query_table]) }}"
+                                    <a href="{{ route('db-governor.table.show', ['connection' => $currentConnection, 'table' => $query->query_table]) }}"
                                        class="text-indigo-600 hover:text-indigo-800 hover:underline font-mono">🗄 {{ $query->query_table }}</a>
                                 @else
                                     <span class="text-gray-300">—</span>
@@ -364,7 +363,7 @@
                                 <template x-if="modal.status === 'pending'">
                                     <div class="space-y-3 border-t border-gray-100 pt-4">
                                         <form
-                                            :action="`{{ $tokenBaseUrl ?? '' }}/` + modal.connection + '/queries/' + modal.id + '/approve'"
+                                            :action="`{{ $baseUrl }}/` + modal.connection + '/queries/' + modal.id + '/approve'"
                                             method="POST"
                                         >
                                             @csrf
@@ -376,7 +375,7 @@
                                         </form>
 
                                         <form
-                                            :action="`{{ $tokenBaseUrl ?? '' }}/` + modal.connection + '/queries/' + modal.id + '/reject'"
+                                            :action="`{{ $baseUrl }}/` + modal.connection + '/queries/' + modal.id + '/reject'"
                                             method="POST"
                                         >
                                             @csrf
@@ -393,7 +392,7 @@
                                 <template x-if="modal.status === 'approved'">
                                     <div class="border-t border-gray-100 pt-4">
                                         <form
-                                            :action="`{{ $tokenBaseUrl ?? '' }}/` + modal.connection + '/queries/' + modal.id + '/execute'"
+                                            :action="`{{ $baseUrl }}/` + modal.connection + '/queries/' + modal.id + '/execute'"
                                             method="POST"
                                         >
                                             @csrf
@@ -406,7 +405,7 @@
                                 <template x-if="modal.status === 'executed' && modal.snapshot_data">
                                     <div class="border-t border-gray-100 pt-4">
                                         <form
-                                            :action="`{{ $tokenBaseUrl ?? '' }}/` + modal.connection + '/queries/' + modal.id + '/rollback'"
+                                            :action="`{{ $baseUrl }}/` + modal.connection + '/queries/' + modal.id + '/rollback'"
                                             method="POST"
                                         >
                                             @csrf
@@ -889,7 +888,7 @@ function sqlConsole() {
             this.qbWhereCol = '';
             if (!tbl) { return; }
             try {
-                const res = await fetch('{{ route('db-governor.schema.table', ['token' => $token, 'connection' => $currentConnection, 'table' => '__TABLE__']) }}'.replace('__TABLE__', tbl));
+                const res = await fetch('{{ route('db-governor.schema.table', ['connection' => $currentConnection, 'table' => '__TABLE__']) }}'.replace('__TABLE__', tbl));
                 const data = await res.json();
                 this.qbColumns = data.columns || [];
                 this.qbInsertRows = this.qbColumns
@@ -957,7 +956,7 @@ function sqlConsole() {
                 return;
             }
             try {
-                const res = await fetch('{{ route('db-governor.sql.execute', ['token' => $token, 'connection' => $currentConnection]) }}', {
+                const res = await fetch('{{ route('db-governor.sql.execute', ['connection' => $currentConnection]) }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

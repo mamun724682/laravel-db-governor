@@ -16,25 +16,23 @@ beforeEach(function () {
         'db-governor.max_affected_rows' => 1000,
         'db-governor.dry_run_enabled' => false,
     ]);
-    $guard = app(AccessGuard::class);
-    $this->token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($this->token));
+    $this->token = $this->loginAsGuard('admin@test.com');
 });
 
 it('dashboard returns 200 with analytics data', function () {
-    $this->get(route('db-governor.dashboard', ['token' => $this->token, 'connection' => 'main']))
+    $this->get(route('db-governor.dashboard', ['connection' => 'main']))
         ->assertOk()
         ->assertViewIs('db-governor::dashboard');
 });
 
 it('queries index returns 200', function () {
-    $this->get(route('db-governor.queries', ['token' => $this->token, 'connection' => 'main']))
+    $this->get(route('db-governor.queries', ['connection' => 'main']))
         ->assertOk()
         ->assertViewIs('db-governor::queries');
 });
 
 it('queries store creates a pending query for WRITE SQL', function () {
-    $this->post(route('db-governor.queries.store', ['token' => $this->token, 'connection' => 'main']), [
+    $this->post(route('db-governor.queries.store', ['connection' => 'main']), [
         'sql' => 'UPDATE users SET active=0 WHERE id=99',
         'name' => 'Test update',
         'description' => 'Testing',
@@ -54,7 +52,6 @@ it('queries action approve updates status', function () {
     ]);
 
     $this->post(route('db-governor.queries.action', [
-        'token' => $this->token,
         'connection' => 'main',
         'query' => $query->id,
         'action' => 'approve',
@@ -65,7 +62,7 @@ it('queries action approve updates status', function () {
 });
 
 it('sql execute returns JSON rows for SELECT', function () {
-    $this->post(route('db-governor.sql.execute', ['token' => $this->token, 'connection' => 'main']), [
+    $this->post(route('db-governor.sql.execute', ['connection' => 'main']), [
         'sql' => 'SELECT 1 as value',
     ])->assertOk()->assertJsonStructure(['success', 'type']);
 });
@@ -74,7 +71,6 @@ it('table show returns 200 for a valid table', function () {
     DB::connection('sqlite')->statement('CREATE TABLE IF NOT EXISTS sample_browse (id INTEGER PRIMARY KEY, name TEXT)');
 
     $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'sample_browse',
     ]))->assertOk()->assertViewIs('db-governor::table');

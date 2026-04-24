@@ -28,7 +28,7 @@ it('all 9 routes are registered', function () {
         ->toContain('db-governor.table.show');
 });
 
-it('view composer shares token and connection with db-governor views', function () {
+it('view composer shares isLoggedIn and connection with db-governor views', function () {
     config([
         'db-governor.allowed.admins' => ['admin@example.com'],
         'db-governor.allowed.employees' => [],
@@ -38,11 +38,10 @@ it('view composer shares token and connection with db-governor views', function 
         ],
     ]);
 
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('admin@example.com');
+    $this->loginAsGuard('admin@example.com');
 
-    $response = $this->get(route('db-governor.connections.pick', ['token' => $token]));
+    $response = $this->get(route('db-governor.connections.pick'));
     $response->assertOk();
-    $response->assertViewHas('token', $token);
+    $response->assertViewHas('isLoggedIn', true);
     $response->assertViewHas('currentConnection', null);
 });

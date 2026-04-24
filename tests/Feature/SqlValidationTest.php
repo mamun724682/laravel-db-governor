@@ -17,14 +17,12 @@ beforeEach(function () {
         'db-governor.log_read_queries' => false,
     ]);
 
-    $guard = app(AccessGuard::class);
-    $this->token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($this->token));
+    $this->token = $this->loginAsGuard('admin@test.com');
 });
 
 it('returns validation error JSON for empty sql string', function () {
     $response = $this->postJson(
-        route('db-governor.sql.execute', ['token' => $this->token, 'connection' => 'main']),
+        route('db-governor.sql.execute', ['connection' => 'main']),
         ['sql' => '   ']
     );
 
@@ -33,7 +31,7 @@ it('returns validation error JSON for empty sql string', function () {
 
 it('returns success false with error for a non-SQL string', function () {
     $response = $this->post(
-        route('db-governor.sql.execute', ['token' => $this->token, 'connection' => 'main']),
+        route('db-governor.sql.execute', ['connection' => 'main']),
         ['sql' => 'not a sql query at all']
     )->assertOk()->json();
 
@@ -44,7 +42,7 @@ it('returns success false with error for a non-SQL string', function () {
 
 it('returns success false with a meaningful error for a SQL syntax error', function () {
     $response = $this->post(
-        route('db-governor.sql.execute', ['token' => $this->token, 'connection' => 'main']),
+        route('db-governor.sql.execute', ['connection' => 'main']),
         ['sql' => 'SELECT FROM WHERE']
     )->assertOk()->json();
 
@@ -54,7 +52,7 @@ it('returns success false with a meaningful error for a SQL syntax error', funct
 
 it('returns success true for a valid SELECT query', function () {
     $response = $this->post(
-        route('db-governor.sql.execute', ['token' => $this->token, 'connection' => 'main']),
+        route('db-governor.sql.execute', ['connection' => 'main']),
         ['sql' => 'SELECT 1']
     )->assertOk()->json();
 
@@ -63,7 +61,7 @@ it('returns success true for a valid SELECT query', function () {
 
 it('queries page console Run button is disabled when textarea is empty', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     // The Run button must use :disabled="loading || !sql.trim()" (already exists — assert it)

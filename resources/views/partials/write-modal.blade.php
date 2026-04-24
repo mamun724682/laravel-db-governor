@@ -47,7 +47,7 @@
             </div>
         </template>
 
-        <form method="POST" :action="'{{ $tokenBaseUrl ?? '' }}/' + (pendingWrite ? pendingWrite.connection : '') + '/queries'">
+        <form method="POST" :action="`{{ $baseUrl }}/` + (pendingWrite ? pendingWrite.connection : '') + '/queries'">
             @csrf
             <input type="hidden" name="sql" x-bind:value="pendingWrite ? pendingWrite.sql : ''">
 

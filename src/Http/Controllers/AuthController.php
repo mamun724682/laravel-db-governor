@@ -27,13 +27,16 @@ class AuthController
                 ->with('error', 'This email is not authorised to access DB Governor.');
         }
 
-        return redirect()->route('db-governor.connections.pick', ['token' => $token]);
+        session(['dbg_token' => $token]);
+
+        return redirect()->route('db-governor.connections.pick');
     }
 
     public function logout(Request $request): RedirectResponse
     {
-        $token = (string) $request->route('token');
+        $token = (string) session('dbg_token', '');
         $this->guard->revokeToken($token);
+        session()->forget('dbg_token');
 
         return redirect()->route('db-governor.login')
             ->with('success', 'You have been logged out.');

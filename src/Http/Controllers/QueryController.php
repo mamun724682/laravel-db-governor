@@ -21,7 +21,7 @@ class QueryController
         private readonly AccessGuard $guard,
     ) {}
 
-    public function index(Request $request, string $token, string $connection): View
+    public function index(Request $request, string $connection): View
     {
         $isAdmin = $this->guard->isAdmin();
         $tab = $request->input('tab', 'write');
@@ -86,11 +86,11 @@ class QueryController
             : [];
 
         return view('db-governor::queries', compact(
-            'queries', 'tables', 'token', 'currentConnection', 'isAdmin', 'submitters', 'tab'
+            'queries', 'tables', 'currentConnection', 'isAdmin', 'submitters', 'tab'
         ));
     }
 
-    public function store(Request $request, string $token, string $connection): RedirectResponse
+    public function store(Request $request, string $connection): RedirectResponse
     {
         $request->validate([
             'sql' => ['required', 'string'],
@@ -116,7 +116,7 @@ class QueryController
         return redirect()->back()->with('success', 'Query submitted for review.');
     }
 
-    public function action(Request $request, string $token, string $connection, string $query, string $action): RedirectResponse
+    public function action(Request $request, string $connection, string $query, string $action): RedirectResponse
     {
         // Accept 'note', 'review_note', or 'rejection_reason' field names
         $note = $request->input('note') ?? $request->input('review_note') ?? $request->input('rejection_reason') ?? '';

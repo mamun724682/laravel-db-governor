@@ -22,7 +22,7 @@
             @foreach ($connections as $key => $connectionName)
                 <button
                     type="button"
-                    onclick="localStorage.setItem('dbg_last_connection', '{{ $key }}'); window.location.href = '{{ route('db-governor.dashboard', ['token' => $token, 'connection' => $key]) }}';"
+                    onclick="localStorage.setItem('dbg_last_connection', '{{ $key }}'); window.location.href = '{{ route('db-governor.dashboard', ['connection' => $key]) }}';"
                     :class="last === '{{ $key }}' ? 'ring-2 ring-indigo-500 border-indigo-400' : 'border-gray-200 hover:border-indigo-300'"
                     class="relative text-left rounded-2xl bg-white shadow border p-6 transition cursor-pointer focus:outline-none"
                 >

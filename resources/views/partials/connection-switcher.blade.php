@@ -2,7 +2,7 @@
     $allConnections = config('db-governor.connections', []);
 @endphp
 
-@if (count($allConnections) > 1 && $token)
+@if (count($allConnections) > 1 && $isLoggedIn)
     <div x-data="{ open: false }" class="relative">
         <button
             type="button"
@@ -24,7 +24,7 @@
             @foreach ($allConnections as $key => $connectionName)
                 <button
                     type="button"
-                    @click="localStorage.setItem('dbg_last_connection', '{{ $key }}'); window.location.href = '{{ $tokenBaseUrl ? $tokenBaseUrl.'/'.$key : '#' }}';"
+                    @click="localStorage.setItem('dbg_last_connection', '{{ $key }}'); window.location.href = '{{ route('db-governor.dashboard', ['connection' => $key]) }}';"
                     class="w-full text-left flex items-center gap-2 px-4 py-2 text-sm {{ $currentConnection === $key ? 'text-indigo-700 bg-indigo-50 font-semibold' : 'text-gray-700 hover:bg-gray-50' }}"
                 >
                     @if ($currentConnection === $key)
@@ -38,7 +38,7 @@
             @endforeach
         </div>
     </div>
-@elseif ($token && count($allConnections) === 1)
+@elseif ($isLoggedIn && count($allConnections) === 1)
     <span class="text-xs text-gray-400">
         🔌 {{ array_key_first($allConnections) }}
     </span>

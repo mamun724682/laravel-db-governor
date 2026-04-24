@@ -13,16 +13,14 @@ beforeEach(function () {
         'db-governor.hidden_tables' => [],
     ]);
 
-    $guard = app(AccessGuard::class);
-    $this->token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($this->token));
+    $this->token = $this->loginAsGuard('admin@test.com');
 });
 
 // ── Layout: hamburger & sidebar toggle ────────────────────────────────────────
 
 it('layout renders a hamburger menu button for mobile', function () {
     $html = $this->get(route('db-governor.dashboard', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)
@@ -32,7 +30,7 @@ it('layout renders a hamburger menu button for mobile', function () {
 
 it('layout hamburger button is hidden on large screens', function () {
     $html = $this->get(route('db-governor.dashboard', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)->toContain('lg:hidden');
@@ -40,7 +38,7 @@ it('layout hamburger button is hidden on large screens', function () {
 
 it('layout contains mobile overlay that closes sidebar on click', function () {
     $html = $this->get(route('db-governor.dashboard', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)
@@ -50,7 +48,7 @@ it('layout contains mobile overlay that closes sidebar on click', function () {
 
 it('layout sidebar uses fixed positioning on mobile with transform transition', function () {
     $html = $this->get(route('db-governor.dashboard', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)
@@ -62,7 +60,7 @@ it('layout sidebar uses fixed positioning on mobile with transform transition', 
 
 it('layout sidebar Alpine binding toggles translate class based on sidebarOpen', function () {
     $html = $this->get(route('db-governor.dashboard', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)->toContain("sidebarOpen ? 'translate-x-0' : '-translate-x-full'");
@@ -72,7 +70,7 @@ it('layout sidebar Alpine binding toggles translate class based on sidebarOpen',
 
 it('layout header is sticky', function () {
     $html = $this->get(route('db-governor.dashboard', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)->toContain('sticky top-0');
@@ -80,7 +78,7 @@ it('layout header is sticky', function () {
 
 it('layout header has a z-index to stay above sidebar overlay', function () {
     $html = $this->get(route('db-governor.dashboard', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)->toContain('z-30');
@@ -90,7 +88,7 @@ it('layout header has a z-index to stay above sidebar overlay', function () {
 
 it('layout includes x-cloak style to prevent flash of unstyled content', function () {
     $html = $this->get(route('db-governor.dashboard', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)->toContain('[x-cloak]');
@@ -100,7 +98,7 @@ it('layout includes x-cloak style to prevent flash of unstyled content', functio
 
 it('layout main content uses responsive padding', function () {
     $html = $this->get(route('db-governor.dashboard', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)->toContain('sm:p-6');
@@ -110,7 +108,7 @@ it('layout main content uses responsive padding', function () {
 
 it('layout user email is hidden on mobile with sm:inline', function () {
     $html = $this->get(route('db-governor.dashboard', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     // Email span uses hidden sm:inline so it only shows on sm+ screens
@@ -121,7 +119,7 @@ it('layout user email is hidden on mobile with sm:inline', function () {
 
 it('queries detail modal container has mx-4 for mobile edge spacing', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     // Both the detail modal and SQL console modal should have mx-4
@@ -130,7 +128,7 @@ it('queries detail modal container has mx-4 for mobile edge spacing', function (
 
 it('write modal container has mx-4 for mobile edge spacing', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)->toContain('max-w-lg mx-4');
@@ -140,7 +138,7 @@ it('write modal container has mx-4 for mobile edge spacing', function () {
 
 it('query builder WHERE grid uses responsive columns', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)->toContain('grid-cols-1 sm:grid-cols-3');
@@ -148,7 +146,7 @@ it('query builder WHERE grid uses responsive columns', function () {
 
 it('query builder does not use fixed non-responsive 3-column grid', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     // Should not have a bare grid-cols-3 without responsive prefix
@@ -159,7 +157,7 @@ it('query builder does not use fixed non-responsive 3-column grid', function () 
 
 it('query log filter form uses responsive grid layout on mobile', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)->toContain('grid-cols-1 sm:grid-cols-2');

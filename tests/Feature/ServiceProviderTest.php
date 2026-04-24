@@ -11,12 +11,12 @@ it('config is publishable with db-governor-config tag', function () {
     expect($publishes)->not->toBeEmpty();
 });
 
-it('views are publishable with db-governor-views tag', function () {
+it('views are not publishable (intentionally kept internal)', function () {
     $publishes = ServiceProvider::pathsToPublish(
         DbGovernorServiceProvider::class,
         'db-governor-views'
     );
-    expect($publishes)->not->toBeEmpty();
+    expect($publishes)->toBeEmpty();
 });
 
 it('migrations are loaded from the package', function () {

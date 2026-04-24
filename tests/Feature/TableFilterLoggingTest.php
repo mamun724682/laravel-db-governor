@@ -26,9 +26,7 @@ beforeEach(function () {
         ]);
     }
 
-    $guard = app(AccessGuard::class);
-    $this->token = $guard->login('dev@test.com');
-    $guard->setPayload($guard->validateToken($this->token));
+    $this->token = $this->loginAsGuard('dev@test.com');
 });
 
 afterEach(function () {
@@ -37,7 +35,6 @@ afterEach(function () {
 
 it('does not log a read entry when browsing a table without filters', function () {
     $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'filter_log_tbl',
     ]))->assertOk();
@@ -47,7 +44,6 @@ it('does not log a read entry when browsing a table without filters', function (
 
 it('logs a read entry when browsing a table with active filters', function () {
     $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'filter_log_tbl',
         'f' => [[['col' => 'status', 'op' => '=', 'val' => 'active']]],
@@ -64,7 +60,6 @@ it('logs a read entry when browsing a table with active filters', function () {
 
 it('logged filter entry includes the WHERE clause in sql_raw', function () {
     $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'filter_log_tbl',
         'f' => [[['col' => 'status', 'op' => '=', 'val' => 'active']]],
@@ -79,7 +74,6 @@ it('does not log when log_read_queries config is false', function () {
     config(['db-governor.log_read_queries' => false]);
 
     $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'filter_log_tbl',
         'f' => [[['col' => 'status', 'op' => '=', 'val' => 'active']]],

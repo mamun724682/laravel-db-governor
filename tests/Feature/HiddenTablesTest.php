@@ -15,9 +15,7 @@ beforeEach(function () {
         'db-governor.hidden_tables' => ['secret_table', 'jobs'],
     ]);
 
-    $guard = app(AccessGuard::class);
-    $this->token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($this->token));
+    $this->token = $this->loginAsGuard('admin@test.com');
 
     DB::connection('sqlite')->statement('CREATE TABLE IF NOT EXISTS visible_tbl (id INTEGER PRIMARY KEY, name TEXT)');
     DB::connection('sqlite')->statement('CREATE TABLE IF NOT EXISTS secret_table (id INTEGER PRIMARY KEY, data TEXT)');
@@ -30,7 +28,6 @@ afterEach(function () {
 
 it('returns 200 for a visible table', function () {
     $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'visible_tbl',
     ]))->assertOk();
@@ -38,7 +35,6 @@ it('returns 200 for a visible table', function () {
 
 it('returns 404 for a hidden table accessed via direct URL', function () {
     $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'secret_table',
     ]))->assertNotFound();
@@ -59,7 +55,6 @@ it('listTables includes visible tables', function () {
 
 it('sidebar view does not render links for hidden tables', function () {
     $html = $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'visible_tbl',
     ]))->assertOk()->getContent();
@@ -72,7 +67,6 @@ it('hidden table URL block is case-sensitive match', function () {
     // 'Secret_Table' (different case) is NOT in hidden list, so it would 404 for a different reason
     // but 'secret_table' (exact match) must be blocked
     $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'secret_table',
     ]))->assertNotFound();

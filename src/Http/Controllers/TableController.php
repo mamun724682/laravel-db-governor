@@ -23,7 +23,7 @@ class TableController
         private readonly AccessGuard $guard,
     ) {}
 
-    public function show(Request $request, string $token, string $connection, string $table): View
+    public function show(Request $request, string $connection, string $table): View
     {
         $hidden = config('db-governor.hidden_tables', []);
 
@@ -100,7 +100,7 @@ class TableController
         $currentConnection = $connection;
 
         return view('db-governor::table', compact(
-            'table', 'columns', 'paginator', 'filterGroups', 'tables', 'token', 'currentConnection'
+            'table', 'columns', 'paginator', 'filterGroups', 'tables', 'currentConnection'
         ));
     }
 

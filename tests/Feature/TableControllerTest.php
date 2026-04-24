@@ -14,9 +14,7 @@ beforeEach(function () {
         'db-governor.hidden_tables' => [],
     ]);
 
-    $guard = app(AccessGuard::class);
-    $this->token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($this->token));
+    $this->token = $this->loginAsGuard('admin@test.com');
 
     // Create a table with 30 rows
     DB::connection('sqlite')->statement(
@@ -35,7 +33,6 @@ afterEach(function () {
 
 it('returns at most 25 rows on page 1 by default', function () {
     $response = $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'paginate_test',
     ]))->assertOk();
@@ -46,7 +43,6 @@ it('returns at most 25 rows on page 1 by default', function () {
 
 it('page 2 returns the remaining 5 rows', function () {
     $response = $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'paginate_test',
         'page' => 2,
@@ -58,7 +54,6 @@ it('page 2 returns the remaining 5 rows', function () {
 
 it('page 1 hasMorePages when total rows exceed 25', function () {
     $paginator = $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'paginate_test',
     ]))->assertOk()->viewData('paginator');
@@ -68,7 +63,6 @@ it('page 1 hasMorePages when total rows exceed 25', function () {
 
 it('page 2 does not have more pages when all rows consumed', function () {
     $paginator = $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'paginate_test',
         'page' => 2,
@@ -82,7 +76,6 @@ it('page 1 on a table with exactly 25 rows has no more pages', function () {
     DB::connection('sqlite')->table('paginate_test')->where('id', '>', 25)->delete();
 
     $paginator = $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'paginate_test',
     ]))->assertOk()->viewData('paginator');
@@ -95,7 +88,6 @@ it('page 1 on a table with fewer than 25 rows shows all rows and no more pages',
     DB::connection('sqlite')->table('paginate_test')->where('id', '>', 10)->delete();
 
     $paginator = $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'paginate_test',
     ]))->assertOk()->viewData('paginator');
@@ -108,7 +100,6 @@ it('page 1 on a table with fewer than 25 rows shows all rows and no more pages',
 
 it('passes correct columns to the view', function () {
     $columns = $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'paginate_test',
     ]))->assertOk()->viewData('columns');
@@ -122,7 +113,6 @@ it('passes correct columns to the view', function () {
 
 it('sort by id DESC puts the highest id first on page 1', function () {
     $paginator = $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'paginate_test',
         'sort' => 'id',
@@ -134,7 +124,6 @@ it('sort by id DESC puts the highest id first on page 1', function () {
 
 it('sort by id ASC puts the lowest id first on page 1', function () {
     $paginator = $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'paginate_test',
         'sort' => 'id',
@@ -146,7 +135,6 @@ it('sort by id ASC puts the lowest id first on page 1', function () {
 
 it('invalid sort column is ignored and returns results without error', function () {
     $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'paginate_test',
         'sort' => 'nonexistent_column',
@@ -158,7 +146,6 @@ it('invalid sort column is ignored and returns results without error', function 
 
 it('filter with equality returns only matching rows', function () {
     $paginator = $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'paginate_test',
         'f' => [
@@ -172,7 +159,6 @@ it('filter with equality returns only matching rows', function () {
 
 it('filter with invalid column name is silently ignored', function () {
     $paginator = $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'paginate_test',
         'f' => [
@@ -186,7 +172,6 @@ it('filter with invalid column name is silently ignored', function () {
 
 it('multiple AND conditions in same group narrow results', function () {
     $paginator = $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'paginate_test',
         'f' => [
@@ -202,7 +187,6 @@ it('multiple AND conditions in same group narrow results', function () {
 
 it('OR groups (multiple groups) combine results', function () {
     $paginator = $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'paginate_test',
         'f' => [
@@ -216,7 +200,6 @@ it('OR groups (multiple groups) combine results', function () {
 
 it('LIKE filter returns matching rows', function () {
     $paginator = $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'paginate_test',
         'f' => [
@@ -232,7 +215,6 @@ it('IS NULL filter returns only null-valued rows', function () {
     DB::connection('sqlite')->table('paginate_test')->where('id', 1)->update(['val' => null]);
 
     $paginator = $this->get(route('db-governor.table.show', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'paginate_test',
         'f' => [

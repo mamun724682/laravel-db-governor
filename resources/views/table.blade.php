@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h1 class="text-lg font-bold text-gray-800">🗄 {{ $table }}</h1>
         <a
-            href="{{ route('db-governor.dashboard', ['token' => $token, 'connection' => $currentConnection]) }}"
+            href="{{ route('db-governor.dashboard', ['connection' => $currentConnection]) }}"
             class="text-xs text-indigo-600 hover:text-indigo-800"
         >← Dashboard</a>
     </div>

@@ -18,9 +18,7 @@ beforeEach(function () {
         'CREATE TABLE IF NOT EXISTS qb_test (id INTEGER PRIMARY KEY, name TEXT, score INTEGER)'
     );
 
-    $guard = app(AccessGuard::class);
-    $this->token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($this->token));
+    $this->token = $this->loginAsGuard('admin@test.com');
 });
 
 afterEach(function () {
@@ -30,7 +28,6 @@ afterEach(function () {
 
 it('schema endpoint returns columns for a visible table', function () {
     $response = $this->get(route('db-governor.schema.table', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'qb_test',
     ]))->assertOk()->json();
@@ -43,7 +40,6 @@ it('schema endpoint returns 404 for a hidden table', function () {
     DB::connection('sqlite')->statement('CREATE TABLE IF NOT EXISTS secret_tbl (id INTEGER)');
 
     $this->get(route('db-governor.schema.table', [
-        'token' => $this->token,
         'connection' => 'main',
         'table' => 'secret_tbl',
     ]))->assertNotFound();
@@ -51,7 +47,7 @@ it('schema endpoint returns 404 for a hidden table', function () {
 
 it('queries page console modal contains the query builder tab', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)->toContain('Query Builder');
@@ -59,7 +55,7 @@ it('queries page console modal contains the query builder tab', function () {
 
 it('queries page console modal contains raw SQL tab', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk()->getContent();
 
     expect($html)->toContain('Raw SQL');

@@ -30,20 +30,19 @@ it('redirects back with error on unknown email', function () {
 });
 
 it('auto-redirects to dashboard when only one connection', function () {
-    $token = app(AccessGuard::class)->login('admin@test.com');
-    $this->get(route('db-governor.connections.pick', ['token' => $token]))
+    $token = $this->loginAsGuard('admin@test.com');
+    $this->get(route('db-governor.connections.pick'))
         ->assertRedirect();
 });
 
 // ── logout ────────────────────────────────────────────────────────────────
 
 it('logout clears the cache token and redirects to login', function () {
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('admin@test.com');
+    $token = $this->loginAsGuard('admin@test.com');
 
     expect(Cache::has('dbg_token_'.$token))->toBeTrue();
 
-    $this->post(route('db-governor.logout', ['token' => $token]))
+    $this->post(route('db-governor.logout'))
         ->assertRedirect(route('db-governor.login'))
         ->assertSessionHas('success');
 
@@ -52,15 +51,15 @@ it('logout clears the cache token and redirects to login', function () {
 
 it('token is invalid after logout', function () {
     $guard = app(AccessGuard::class);
-    $token = $guard->login('admin@test.com');
+    $token = $this->loginAsGuard('admin@test.com');
 
-    $this->post(route('db-governor.logout', ['token' => $token]));
+    $this->post(route('db-governor.logout'));
 
     expect(fn () => $guard->validateToken($token))
         ->toThrow(RuntimeException::class);
 });
 
 it('logout redirects to login even with an already-invalid token', function () {
-    $this->post(route('db-governor.logout', ['token' => 'nonexistent_token_xyz']))
+    $this->post(route('db-governor.logout'))
         ->assertRedirect(route('db-governor.login'));
 });

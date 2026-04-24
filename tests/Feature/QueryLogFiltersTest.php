@@ -28,14 +28,12 @@ beforeEach(function () {
         ]);
     }
 
-    $guard = app(AccessGuard::class);
-    $this->token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($this->token));
+    $this->token = $this->loginAsGuard('admin@test.com');
 });
 
 it('query log uses simplePaginate with 25 items per page', function () {
     $response = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
     ]))->assertOk();
 
     $queries = $response->viewData('queries');
@@ -45,7 +43,7 @@ it('query log uses simplePaginate with 25 items per page', function () {
 
 it('keyword filter searches sql_raw', function () {
     $response = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
         'keyword' => 'WHERE id=1',
     ]))->assertOk();
 
@@ -58,7 +56,7 @@ it('keyword filter searches sql_raw', function () {
 
 it('keyword filter searches name', function () {
     $response = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
         'keyword' => 'Query 5',
     ]))->assertOk();
 
@@ -71,7 +69,7 @@ it('status filter returns only matching status rows', function () {
     GovernedQuery::first()->update(['status' => QueryStatus::Approved->value]);
 
     $response = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
         'status' => QueryStatus::Approved->value,
     ]))->assertOk();
 
@@ -85,7 +83,7 @@ it('date_from filter excludes older rows', function () {
     GovernedQuery::first()->update(['created_at' => now()]);
 
     $response = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
         'date_from' => now()->subDay()->toDateString(),
     ]))->assertOk();
 
@@ -98,7 +96,7 @@ it('date_to filter excludes future rows', function () {
     GovernedQuery::first()->update(['created_at' => now()->subDays(3)]);
 
     $response = $this->get(route('db-governor.queries', [
-        'token' => $this->token, 'connection' => 'main',
+        'connection' => 'main',
         'date_to' => now()->toDateString(),
     ]))->assertOk();
 

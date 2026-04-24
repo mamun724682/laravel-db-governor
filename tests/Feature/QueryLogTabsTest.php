@@ -46,16 +46,13 @@ beforeEach(function () {
         'executed_at' => now(),
     ]);
 
-    $guard = app(AccessGuard::class);
-    $this->token = $guard->login('admin@test.com');
-    $guard->setPayload($guard->validateToken($this->token));
+    $this->token = $this->loginAsGuard('admin@test.com');
 });
 
 // ── default tab (write) ───────────────────────────────────────────────────
 
 it('default tab shows only write and ddl queries (not read)', function () {
     $queries = $this->get(route('db-governor.queries', [
-        'token' => $this->token,
         'connection' => 'main',
     ]))->assertOk()->viewData('queries');
 
@@ -66,7 +63,6 @@ it('default tab shows only write and ddl queries (not read)', function () {
 
 it('?tab=write shows only write and ddl queries', function () {
     $queries = $this->get(route('db-governor.queries', [
-        'token' => $this->token,
         'connection' => 'main',
         'tab' => 'write',
     ]))->assertOk()->viewData('queries');
@@ -79,7 +75,6 @@ it('?tab=write shows only write and ddl queries', function () {
 
 it('?tab=read shows only read queries', function () {
     $queries = $this->get(route('db-governor.queries', [
-        'token' => $this->token,
         'connection' => 'main',
         'tab' => 'read',
     ]))->assertOk()->viewData('queries');
@@ -90,7 +85,6 @@ it('?tab=read shows only read queries', function () {
 
 it('?tab=read does not show write or ddl queries', function () {
     $queries = $this->get(route('db-governor.queries', [
-        'token' => $this->token,
         'connection' => 'main',
         'tab' => 'read',
     ]))->assertOk()->viewData('queries');
@@ -104,7 +98,6 @@ it('?tab=read does not show write or ddl queries', function () {
 
 it('tab variable is passed to the view', function () {
     $tab = $this->get(route('db-governor.queries', [
-        'token' => $this->token,
         'connection' => 'main',
         'tab' => 'read',
     ]))->assertOk()->viewData('tab');
@@ -114,7 +107,6 @@ it('tab variable is passed to the view', function () {
 
 it('tab defaults to write when not specified', function () {
     $tab = $this->get(route('db-governor.queries', [
-        'token' => $this->token,
         'connection' => 'main',
     ]))->assertOk()->viewData('tab');
 
@@ -125,7 +117,6 @@ it('tab defaults to write when not specified', function () {
 
 it('queries page HTML contains a tab=write link', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token,
         'connection' => 'main',
     ]))->assertOk()->getContent();
 
@@ -134,7 +125,6 @@ it('queries page HTML contains a tab=write link', function () {
 
 it('queries page HTML contains a tab=read link', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token,
         'connection' => 'main',
     ]))->assertOk()->getContent();
 
@@ -143,7 +133,6 @@ it('queries page HTML contains a tab=read link', function () {
 
 it('active tab link is visually distinguished in HTML', function () {
     $html = $this->get(route('db-governor.queries', [
-        'token' => $this->token,
         'connection' => 'main',
         'tab' => 'read',
     ]))->assertOk()->getContent();

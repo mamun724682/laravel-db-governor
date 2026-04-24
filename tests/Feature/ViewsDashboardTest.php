@@ -11,20 +11,18 @@ beforeEach(function () {
 });
 
 it('dashboard shows stats cards', function () {
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('admin@test.com');
+    $token = $this->loginAsGuard('admin@test.com');
 
-    $this->get(route('db-governor.dashboard', ['token' => $token, 'connection' => 'main']))
+    $this->get(route('db-governor.dashboard', ['connection' => 'main']))
         ->assertOk()
         ->assertSee('Pending')
         ->assertSee('Executed');
 });
 
 it('dashboard shows all six stat labels', function () {
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('admin@test.com');
+    $token = $this->loginAsGuard('admin@test.com');
 
-    $this->get(route('db-governor.dashboard', ['token' => $token, 'connection' => 'main']))
+    $this->get(route('db-governor.dashboard', ['connection' => 'main']))
         ->assertOk()
         ->assertSee('Pending')
         ->assertSee('Approved')
@@ -34,10 +32,9 @@ it('dashboard shows all six stat labels', function () {
 });
 
 it('write modal markup is present on queries page', function () {
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('admin@test.com');
+    $token = $this->loginAsGuard('admin@test.com');
 
-    $this->get(route('db-governor.queries', ['token' => $token, 'connection' => 'main']))
+    $this->get(route('db-governor.queries', ['connection' => 'main']))
         ->assertOk()
         ->assertSee('writeModal', false)
         ->assertSee('Submit for Approval');

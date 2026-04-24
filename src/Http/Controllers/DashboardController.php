@@ -16,7 +16,7 @@ class DashboardController
         private readonly AccessGuard $guard,
     ) {}
 
-    public function index(Request $request, string $token, string $connection): View
+    public function index(Request $request, string $connection): View
     {
         $baseQuery = fn () => GovernedQuery::where('connection', $connection)
             ->when(! $this->guard->isAdmin(), fn ($q) => $q->where('submitted_by', $this->guard->email()));
@@ -33,6 +33,6 @@ class DashboardController
         $tables = $this->connectionManager->listTables($connection);
         $currentConnection = $connection;
 
-        return view('db-governor::dashboard', compact('stats', 'tables', 'token', 'currentConnection'));
+        return view('db-governor::dashboard', compact('stats', 'tables', 'currentConnection'));
     }
 }

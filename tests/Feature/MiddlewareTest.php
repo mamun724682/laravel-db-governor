@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Crypt;
 use Mamun724682\DbGovernor\Services\AccessGuard;
 
 beforeEach(function () {
@@ -13,35 +12,39 @@ beforeEach(function () {
 });
 
 it('redirects to login when no token present', function () {
-    $this->get('/db-governor/invalid-token')
+    // Access protected route with no session token
+    $this->get(route('db-governor.dashboard', ['connection' => 'main']))
         ->assertRedirect(route('db-governor.login'));
 });
 
 it('redirects to login when token is invalid', function () {
-    $this->get('/db-governor/bad-token')
+    $this->withSession(['dbg_token' => 'invalid-token'])
+        ->get(route('db-governor.dashboard', ['connection' => 'main']))
         ->assertRedirect(route('db-governor.login'));
 });
 
 it('redirects to login when token is expired', function () {
-    $expired = Crypt::encryptString(json_encode([
+    // Put an expired token in the cache manually
+    $expiredToken = 'expiredtoken1234567890123456789012';
+    \Illuminate\Support\Facades\Cache::put('dbg_token_'.$expiredToken, [
         'email' => 'admin@test.com',
         'role' => 'admin',
         'expires_at' => now()->subHour()->toISOString(),
-    ]));
-    $this->get("/db-governor/{$expired}")
+    ], now()->addMinute());
+
+    $this->withSession(['dbg_token' => $expiredToken])
+        ->get(route('db-governor.dashboard', ['connection' => 'main']))
         ->assertRedirect(route('db-governor.login'));
 });
 
-it('returns 404 for unknown connection key', function () {
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('admin@test.com');
-    $this->get("/db-governor/{$token}/nonexistent/")
-        ->assertStatus(404);
+it('redirects to connections picker for unknown connection key', function () {
+    $this->loginAsGuard('admin@test.com');
+    $this->get(route('db-governor.dashboard', ['connection' => 'nonexistent']))
+        ->assertRedirect(route('db-governor.connections.pick'));
 });
 
 it('allows valid token and known connection through', function () {
-    $guard = app(AccessGuard::class);
-    $token = $guard->login('admin@test.com');
-    $this->get("/db-governor/{$token}/main/")
+    $this->loginAsGuard('admin@test.com');
+    $this->get(route('db-governor.dashboard', ['connection' => 'main']))
         ->assertSuccessful();
 });
