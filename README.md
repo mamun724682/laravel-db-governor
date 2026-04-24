@@ -1,6 +1,9 @@
 # Laravel DB Governor
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/mamun724682/laravel-db-governor.svg?style=flat-square)](https://packagist.org/packages/mamun724682/laravel-db-governor)
+[![Total Downloads](https://img.shields.io/packagist/dt/mamun724682/laravel-db-governor.svg?style=flat-square)](https://packagist.org/packages/mamun724682/laravel-db-governor)
+[![Monthly Downloads](https://img.shields.io/packagist/dm/mamun724682/laravel-db-governor.svg?style=flat-square)](https://packagist.org/packages/mamun724682/laravel-db-governor)
+[![GitHub Stars](https://img.shields.io/github/stars/mamun724682/laravel-db-governor?style=flat-square)](https://github.com/mamun724682/laravel-db-governor/stargazers)
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-blue?style=flat-square)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-10%20–%2013-red?style=flat-square)](https://laravel.com)
 [![License](https://img.shields.io/packagist/l/mamun724682/laravel-db-governor.svg?style=flat-square)](LICENSE)
@@ -260,7 +263,7 @@ Navigate to `http://your-app.test/db-governor` and log in with an admin or emplo
 ],
 ```
 
-Each connection gets its own URL: `/db-governor/{token}/prod`, `/db-governor/{token}/staging`, etc.
+Each connection gets its own URL: `/db-governor/prod`, `/db-governor/staging`, etc.
 
 ---
 
