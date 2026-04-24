@@ -2,7 +2,6 @@
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/mamun724682/laravel-db-governor.svg?style=flat-square)](https://packagist.org/packages/mamun724682/laravel-db-governor)
 [![Total Downloads](https://img.shields.io/packagist/dt/mamun724682/laravel-db-governor.svg?style=flat-square)](https://packagist.org/packages/mamun724682/laravel-db-governor)
-[![Monthly Downloads](https://img.shields.io/packagist/dm/mamun724682/laravel-db-governor.svg?style=flat-square)](https://packagist.org/packages/mamun724682/laravel-db-governor)
 [![GitHub Stars](https://img.shields.io/github/stars/mamun724682/laravel-db-governor?style=flat-square)](https://github.com/mamun724682/laravel-db-governor/stargazers)
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-blue?style=flat-square)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-10%20–%2013-red?style=flat-square)](https://laravel.com)
