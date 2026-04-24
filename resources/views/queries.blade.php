@@ -536,7 +536,22 @@
                             </table>
                             <p class="px-4 py-2 text-xs text-gray-400 border-t border-gray-100">
                                 <span x-text="result.rows.length"></span> row(s)
+                                <template x-if="result.executionTimeMs !== null && result.executionTimeMs !== undefined">
+                                    <span x-text="' · ' + result.executionTimeMs + ' ms'"></span>
+                                </template>
                             </p>
+                        </div>
+                    </template>
+
+                    {{-- Empty result state --}}
+                    <template x-if="result && result.rows && result.rows.length === 0">
+                        <div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-6 py-8 text-center">
+                            <p class="text-2xl mb-2">🔍</p>
+                            <p class="text-sm font-medium text-gray-600">No rows returned</p>
+                            <p class="text-xs text-gray-400 mt-1">The query ran successfully but matched no records.</p>
+                            <template x-if="result.executionTimeMs !== null && result.executionTimeMs !== undefined">
+                                <p class="text-xs text-gray-400 mt-1">Completed in <span x-text="result.executionTimeMs"></span> ms</p>
+                            </template>
                         </div>
                     </template>
                 </div>
