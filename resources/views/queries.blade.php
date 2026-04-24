@@ -47,6 +47,7 @@
     <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-3 mb-6 bg-white rounded-xl border border-gray-100 shadow px-4 py-3">
         <input type="hidden" name="token" value="{{ $token }}">
         <input type="hidden" name="connection" value="{{ $currentConnection }}">
+        <input type="hidden" name="tab" value="{{ $tab }}">
 
         <select name="status" class="rounded-lg border border-gray-300 text-sm px-3 py-1.5 w-full lg:w-auto focus:outline-none focus:ring-1 focus:ring-indigo-500">
             <option value="">All statuses</option>
@@ -108,7 +109,7 @@
         @endif
 
         <button type="submit" class="rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-1.5 transition">Filter</button>
-        <a href="{{ route('db-governor.queries', ['token' => $token, 'connection' => $currentConnection]) }}" class="text-sm text-gray-400 hover:text-gray-600">Clear</a>
+        <a href="{{ route('db-governor.queries', ['token' => $token, 'connection' => $currentConnection, 'tab' => $tab]) }}" class="text-sm text-gray-400 hover:text-gray-600">Clear</a>
     </form>
 
     {{-- Queries table --}}
