@@ -9,7 +9,7 @@
     <script defer src="{{ route('db-governor.assets', 'alpine.min.js') }}"></script>
     <style>[x-cloak]{display:none!important}</style>
 </head>
-<body class="min-h-screen bg-gray-50 flex flex-col" x-data="{ sidebarOpen: false }">
+<body class="h-screen overflow-hidden bg-gray-50 flex flex-col" x-data="{ sidebarOpen: false }">
 
     {{-- Top bar --}}
     <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30">

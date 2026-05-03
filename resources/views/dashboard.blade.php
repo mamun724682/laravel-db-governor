@@ -19,22 +19,38 @@
     </div>
 
 
-    {{-- Tables quick-access --}}
-    @if (!empty($tables))
-        <div class="rounded-2xl bg-white shadow border border-gray-100 p-6">
-            <h2 class="text-base font-semibold text-gray-800 mb-3">Tables</h2>
-            <ul class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                @foreach ($tables as $table)
+    {{-- Recent tables (tracked via localStorage) --}}
+    <div
+        x-data="{
+            recentTables: [],
+            init() {
+                const key = 'dbg_recent_{{ $currentConnection }}';
+                this.recentTables = JSON.parse(localStorage.getItem(key) || '[]');
+            }
+        }"
+        class="rounded-2xl bg-white shadow border border-gray-100 p-6"
+    >
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-base font-semibold text-gray-800">Recently Visited Tables</h2>
+            <span class="text-xs text-gray-400">Click a table in the sidebar to track it here</span>
+        </div>
+
+        <template x-if="recentTables.length === 0">
+            <p class="text-sm text-gray-400 italic">No tables visited yet. Click any table in the sidebar to get started.</p>
+        </template>
+
+        <template x-if="recentTables.length > 0">
+            <ul class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                <template x-for="table in recentTables" :key="table.name">
                     <li>
                         <a
-                            href="{{ route('db-governor.table.show', ['connection' => $currentConnection, 'table' => $table]) }}"
+                            :href="table.url"
                             class="block rounded-lg border border-gray-100 bg-gray-50 hover:bg-indigo-50 hover:border-indigo-200 px-3 py-2 text-xs font-medium text-gray-700 hover:text-indigo-700 transition truncate"
-                        >
-                            🗄 {{ $table }}
-                        </a>
+                            x-text="'🗄 ' + table.name"
+                        ></a>
                     </li>
-                @endforeach
+                </template>
             </ul>
-        </div>
-    @endif
+        </template>
+    </div>
 @endsection

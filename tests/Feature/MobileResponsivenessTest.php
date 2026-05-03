@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Mamun724682\DbGovernor\Services\AccessGuard;
 
 uses(RefreshDatabase::class);
 
@@ -163,3 +162,57 @@ it('query log filter form uses responsive grid layout on mobile', function () {
     expect($html)->toContain('grid-cols-1 sm:grid-cols-2');
 });
 
+// ── Layout: body is h-screen for bounded sidebar scrolling ───────────────────
+
+it('layout body uses h-screen so sidebar viewport is bounded and scrollable', function () {
+    $html = $this->get(route('db-governor.dashboard', [
+        'connection' => 'main',
+    ]))->assertOk()->getContent();
+
+    expect($html)->toContain('h-screen');
+});
+
+it('layout body uses overflow-hidden to prevent double scrollbars', function () {
+    $html = $this->get(route('db-governor.dashboard', [
+        'connection' => 'main',
+    ]))->assertOk()->getContent();
+
+    expect($html)->toContain('h-screen overflow-hidden');
+});
+
+it('layout sidebar aside has overflow-y-auto for scrollable table list', function () {
+    $html = $this->get(route('db-governor.dashboard', [
+        'connection' => 'main',
+    ]))->assertOk()->getContent();
+
+    expect($html)->toContain('overflow-y-auto');
+});
+
+// ── Sidebar: localStorage tracking for recently visited tables ───────────────
+
+it('sidebar table links write to localStorage on click', function () {
+    $html = $this->get(route('db-governor.dashboard', [
+        'connection' => 'main',
+    ]))->assertOk()->getContent();
+
+    expect($html)
+        ->toContain('dbg_recent_main')
+        ->toContain('localStorage.setItem');
+});
+
+it('sidebar localStorage key is connection-specific', function () {
+    $html = $this->get(route('db-governor.dashboard', [
+        'connection' => 'main',
+    ]))->assertOk()->getContent();
+
+    // Key scoped to connection name
+    expect($html)->toContain("'dbg_recent_main'");
+});
+
+it('sidebar stores at most 5 recent tables in localStorage', function () {
+    $html = $this->get(route('db-governor.dashboard', [
+        'connection' => 'main',
+    ]))->assertOk()->getContent();
+
+    expect($html)->toContain('recent.slice(0, 5)');
+});

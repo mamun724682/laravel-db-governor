@@ -63,6 +63,14 @@
                                     <a
                                         href="{{ route('db-governor.table.show', ['connection' => $currentConnection, 'table' => $table]) }}"
                                         class="flex-1 flex items-center gap-1.5 text-xs text-gray-600 hover:text-indigo-600 transition truncate"
+                                        @click="
+                                            const key = 'dbg_recent_{{ $currentConnection }}';
+                                            const item = { name: '{{ $table }}', url: $el.href };
+                                            let recent = JSON.parse(localStorage.getItem(key) || '[]');
+                                            recent = recent.filter(t => t.name !== item.name);
+                                            recent.unshift(item);
+                                            localStorage.setItem(key, JSON.stringify(recent.slice(0, 5)));
+                                        "
                                     >
                                         🗄 {{ $table }}
                                     </a>
