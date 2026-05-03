@@ -67,7 +67,7 @@
 
         {{-- Sidebar --}}
         <aside
-            class="fixed lg:static inset-y-0 left-0 z-20 w-64 lg:w-56 flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto transform transition-transform duration-200 ease-in-out lg:translate-x-0 top-0 pt-14 lg:pt-0"
+            class="fixed lg:static inset-y-0 left-0 z-20 w-64 lg:w-56 flex-shrink-0 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0 top-0 pt-14 lg:pt-0"
             :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
         >
             @include('db-governor::partials.sidebar')

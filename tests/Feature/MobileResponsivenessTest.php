@@ -185,7 +185,28 @@ it('layout sidebar aside has overflow-y-auto for scrollable table list', functio
         'connection' => 'main',
     ]))->assertOk()->getContent();
 
+    // overflow-y-auto is on the table list ul inside the nav, not the aside itself
     expect($html)->toContain('overflow-y-auto');
+});
+
+it('sidebar table list ul is independently scrollable with flex layout', function () {
+    $html = $this->get(route('db-governor.dashboard', [
+        'connection' => 'main',
+    ]))->assertOk()->getContent();
+
+    // ul has the scroll classes; search input sits above it and does not scroll
+    expect($html)
+        ->toContain('flex-1 min-h-0 overflow-y-auto')
+        ->toContain('overflow-hidden'); // nav has overflow-hidden to contain it
+});
+
+it('sidebar search input is outside the scrollable table list', function () {
+    $html = $this->get(route('db-governor.dashboard', [
+        'connection' => 'main',
+    ]))->assertOk()->getContent();
+
+    // The search input is in a flex-shrink-0 div, so it never scrolls away
+    expect($html)->toContain('flex-shrink-0');
 });
 
 // ── Sidebar: localStorage tracking for recently visited tables ───────────────
