@@ -9,7 +9,10 @@
                 <li>
                     <a
                         href="{{ route('db-governor.dashboard', ['connection' => $currentConnection]) }}"
-                        class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
+                        class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition
+                            {{ request()->routeIs('db-governor.dashboard')
+                                ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                                : 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-700' }}"
                     >
                         📊 Dashboard
                     </a>
@@ -17,7 +20,10 @@
                 <li>
                     <a
                         href="{{ route('db-governor.queries', ['connection' => $currentConnection]) }}"
-                        class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
+                        class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition
+                            {{ request()->routeIs('db-governor.queries')
+                                ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                                : 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-700' }}"
                     >
                         📋 Query Log
                     </a>
@@ -43,11 +49,13 @@
             {{-- Table list - this scrolls independently --}}
             <ul class="flex-1 min-h-0 overflow-y-auto space-y-0.5 pr-1">
                 @foreach ($tables as $table)
+                    @php $isActiveTable = request()->routeIs('db-governor.table.show') && request()->route('table') === $table; @endphp
                     <li
                         x-data="{ open: false, cols: [], loading: false, loaded: false }"
                         x-show="!tableSearch || '{{ $table }}'.toLowerCase().includes(tableSearch.toLowerCase())"
                     >
-                        <div class="flex items-center gap-1 rounded-lg px-2 py-1.5 hover:bg-gray-50 group transition">
+                        <div class="flex items-center gap-1 rounded-lg px-2 py-1.5 group transition
+                            {{ $isActiveTable ? 'bg-indigo-50' : 'hover:bg-gray-50' }}">
                             {{-- Expand toggle --}}
                             <button
                                 type="button"
@@ -61,7 +69,8 @@
                                             .catch(() => { loading = false; });
                                     }
                                 "
-                                class="flex-shrink-0 text-gray-400 hover:text-indigo-500 transition w-4 h-4 flex items-center justify-center"
+                                class="flex-shrink-0 transition w-4 h-4 flex items-center justify-center
+                                    {{ $isActiveTable ? 'text-indigo-400' : 'text-gray-400 hover:text-indigo-500' }}"
                                 :title="open ? 'Collapse' : 'Expand columns'"
                             >
                                 <svg x-show="!open" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
@@ -71,7 +80,8 @@
                             {{-- Table link --}}
                             <a
                                 href="{{ route('db-governor.table.show', ['connection' => $currentConnection, 'table' => $table]) }}"
-                                class="flex-1 flex items-center gap-1.5 text-xs text-gray-600 hover:text-indigo-600 transition truncate"
+                                class="flex-1 flex items-center gap-1.5 text-xs transition truncate
+                                    {{ $isActiveTable ? 'text-indigo-700 font-semibold' : 'text-gray-600 hover:text-indigo-600' }}"
                                 @click="
                                     const key = 'dbg_recent_{{ $currentConnection }}';
                                     const item = { name: '{{ $table }}', url: $el.href };
@@ -81,6 +91,9 @@
                                     localStorage.setItem(key, JSON.stringify(recent.slice(0, 5)));
                                 "
                             >
+                                @if ($isActiveTable)
+                                    <span class="w-1 h-3.5 rounded-full bg-indigo-500 flex-shrink-0 -ml-0.5"></span>
+                                @endif
                                 🗄 {{ $table }}
                             </a>
                         </div>
