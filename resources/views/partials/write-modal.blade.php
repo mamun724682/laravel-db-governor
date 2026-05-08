@@ -44,6 +44,21 @@
                         </template>
                     </ul>
                 </template>
+
+                {{-- Cascade DELETE warning --}}
+                <template x-if="cascadeTables && cascadeTables.length > 0">
+                    <div class="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5">
+                        <p class="text-xs font-semibold text-red-700 mb-1">⚠ Cascade DELETE Warning</p>
+                        <p class="text-xs text-red-600">
+                            This DELETE will cascade to child tables. Those rows will be <strong>permanently deleted</strong> and <strong>cannot be rolled back</strong>:
+                        </p>
+                        <ul class="mt-1.5 flex flex-wrap gap-1.5">
+                            <template x-for="t in cascadeTables" :key="t">
+                                <li class="inline-flex items-center rounded px-2 py-0.5 bg-red-100 text-red-700 text-xs font-mono" x-text="t"></li>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
             </div>
         </template>
 

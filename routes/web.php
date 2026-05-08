@@ -57,6 +57,9 @@ Route::prefix($prefix)
                 Route::get('/schema/{table}', [SchemaController::class, 'table'])
                     ->name('db-governor.schema.table');
 
+                Route::get('/cascade-check', [SchemaController::class, 'cascadeCheck'])
+                    ->name('db-governor.schema.cascade-check');
+
                 Route::get('/{table}', [TableController::class, 'show'])
                     ->name('db-governor.table.show');
             });

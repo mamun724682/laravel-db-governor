@@ -88,6 +88,7 @@ class SqlController
             'type' => 'write',
             'sql' => $sql,
             'connection' => $connection,
+            'table' => $this->classifier->extractTables($sql)[0] ?? null,
             'risk_level' => $risk->level->value,
             'flags' => $risk->flags,
             'estimated_rows' => $risk->estimatedRows,

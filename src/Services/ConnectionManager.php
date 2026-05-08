@@ -88,6 +88,47 @@ class ConnectionManager
     }
 
     /**
+     * Detect child tables that have ON DELETE CASCADE foreign keys pointing to the given target table.
+     * Results are cached using the schema_cache_ttl config.
+     *
+     * @return array<int, string>
+     */
+    public function detectCascadeTables(string $targetTable, string $key): array
+    {
+        $ttl = config('db-governor.schema_cache_ttl', 300);
+        $cacheKey = "db-governor.cascade.{$key}.{$targetTable}";
+
+        return Cache::remember($cacheKey, $ttl, function () use ($targetTable, $key): array {
+            $conn = $this->resolve($key);
+            $allTables = $this->inspector($key)->listTables($conn);
+            $cascadeChildren = [];
+
+            foreach ($allTables as $table) {
+                if ($table === $targetTable) {
+                    continue;
+                }
+
+                try {
+                    $fks = $conn->getSchemaBuilder()->getForeignKeys($table);
+
+                    foreach ($fks as $fk) {
+                        if (($fk['foreign_table'] ?? '') === $targetTable
+                            && strtolower($fk['on_delete'] ?? '') === 'cascade'
+                        ) {
+                            $cascadeChildren[] = $table;
+                            break;
+                        }
+                    }
+                } catch (\Throwable) {
+                    // Skip tables we cannot inspect
+                }
+            }
+
+            return $cascadeChildren;
+        });
+    }
+
+    /**
      * Return the first hidden table name referenced in the SQL, or null if none.
      */
     public function firstHiddenTableIn(string $sql): ?string

@@ -112,7 +112,23 @@
     </form>
 
     {{-- Queries table --}}
-    <div class="rounded-2xl bg-white shadow border border-gray-100 overflow-x-auto" x-data="{ modal: null }">
+    <div class="rounded-2xl bg-white shadow border border-gray-100 overflow-x-auto" x-data="{
+        modal: null,
+        cascadeTables: [],
+        cascadeLoading: false,
+        init() {
+            this.$watch('modal', (val) => {
+                this.cascadeTables = [];
+                if (val && val.query_table && val.sql_raw && /^\s*DELETE\b/i.test(val.sql_raw)) {
+                    this.cascadeLoading = true;
+                    fetch(`{{ $baseUrl }}/${val.connection}/cascade-check?table=${encodeURIComponent(val.query_table)}`)
+                        .then(r => r.json())
+                        .then(d => { this.cascadeTables = d.cascade_tables || []; this.cascadeLoading = false; })
+                        .catch(() => { this.cascadeLoading = false; });
+                }
+            });
+        }
+    }">
 
         @if ($queries->isEmpty())
             <div class="px-6 py-10 text-center text-sm text-gray-400">No queries found.</div>
@@ -213,6 +229,19 @@
                                 <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">SQL</p>
                                 <pre class="rounded-lg bg-gray-50 border border-gray-200 p-3 text-xs font-mono text-gray-700 overflow-x-auto whitespace-pre-wrap" x-text="modal.sql_raw"></pre>
                             </div>
+
+                            {{-- Cascade DELETE warning --}}
+                            <template x-if="cascadeTables.length > 0">
+                                <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                                    <p class="text-xs font-semibold text-red-700 mb-1">⚠ Cascade DELETE — Child Data Cannot Be Rolled Back</p>
+                                    <p class="text-xs text-red-600 mb-2">This DELETE cascades to the following child tables. Those rows are permanently deleted and have no snapshot:</p>
+                                    <div class="flex flex-wrap gap-1.5">
+                                        <template x-for="t in cascadeTables" :key="t">
+                                            <span class="inline-flex items-center rounded px-2 py-0.5 bg-red-100 text-red-700 text-xs font-mono" x-text="t"></span>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
 
                             {{-- Submission details --}}
                             <div class="rounded-lg border border-gray-100 bg-gray-50 p-4 space-y-1.5 text-xs text-gray-600">
@@ -801,6 +830,7 @@ function sqlConsole() {
         error: null,
         writeModal: false,
         pendingWrite: null,
+        cascadeTables: [],
         qbTable: '',
         qbType: 'SELECT',
         qbColumns: [],
@@ -970,6 +1000,14 @@ function sqlConsole() {
                 } else if (data.type === 'write') {
                     this.pendingWrite = data;
                     this.writeModal   = true;
+                    // Cascade check for DELETE queries
+                    this.cascadeTables = [];
+                    if (data.table && /^\s*DELETE\b/i.test(this.sql)) {
+                        fetch('{{ route('db-governor.schema.cascade-check', ['connection' => $currentConnection]) }}?table=' + encodeURIComponent(data.table))
+                            .then(r => r.json())
+                            .then(d => { this.cascadeTables = d.cascade_tables || []; })
+                            .catch(() => {});
+                    }
                 } else if (data.error) {
                     this.error = data.error;
                 } else {

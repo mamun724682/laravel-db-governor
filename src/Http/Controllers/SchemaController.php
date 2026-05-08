@@ -13,6 +13,25 @@ class SchemaController
         private readonly ConnectionManager $connectionManager,
     ) {}
 
+    public function cascadeCheck(Request $request, string $connection): JsonResponse
+    {
+        $table = (string) $request->query('table', '');
+
+        if ($table === '') {
+            return response()->json(['cascade_tables' => []]);
+        }
+
+        $hidden = config('db-governor.hidden_tables', []);
+
+        if (in_array($table, $hidden, true)) {
+            return response()->json(['cascade_tables' => []]);
+        }
+
+        $cascadeTables = $this->connectionManager->detectCascadeTables($table, $connection);
+
+        return response()->json(['cascade_tables' => $cascadeTables]);
+    }
+
     public function table(Request $request, string $connection, string $table): JsonResponse
     {
         $hidden = config('db-governor.hidden_tables', []);
