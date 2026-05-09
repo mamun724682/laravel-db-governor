@@ -6,6 +6,7 @@ use Mamun724682\DbGovernor\DTOs\PendingQuery;
 use Mamun724682\DbGovernor\DTOs\QueryResult;
 use Mamun724682\DbGovernor\DTOs\RollbackResult;
 use Mamun724682\DbGovernor\Enums\QueryStatus;
+use Mamun724682\DbGovernor\Exceptions\InvalidTransitionException;
 use Mamun724682\DbGovernor\Exceptions\QueryBlockedException;
 use Mamun724682\DbGovernor\Models\GovernedQuery;
 
@@ -67,7 +68,13 @@ class ApprovalService
     {
         $this->guard->assertAdmin();
 
-        GovernedQuery::findOrFail($uuid)->update([
+        $query = GovernedQuery::findOrFail($uuid);
+
+        if ($query->status !== QueryStatus::Pending->value) {
+            throw new InvalidTransitionException($query->status, QueryStatus::Pending->value, 'approve');
+        }
+
+        $query->update([
             'status' => QueryStatus::Approved->value,
             'reviewed_by' => $this->guard->email(),
             'reviewed_at' => now(),
@@ -79,7 +86,13 @@ class ApprovalService
     {
         $this->guard->assertAdmin();
 
-        GovernedQuery::findOrFail($uuid)->update([
+        $query = GovernedQuery::findOrFail($uuid);
+
+        if ($query->status !== QueryStatus::Pending->value) {
+            throw new InvalidTransitionException($query->status, QueryStatus::Pending->value, 'reject');
+        }
+
+        $query->update([
             'status' => QueryStatus::Rejected->value,
             'reviewed_by' => $this->guard->email(),
             'reviewed_at' => now(),
@@ -102,7 +115,12 @@ class ApprovalService
     public function rollback(string $uuid): RollbackResult
     {
         $this->guard->assertAdmin();
+
         $query = GovernedQuery::findOrFail($uuid);
+
+        if ($query->status !== QueryStatus::Executed->value) {
+            throw new InvalidTransitionException($query->status, QueryStatus::Executed->value, 'rollback');
+        }
 
         return $this->rollbackService->rollback($query);
     }

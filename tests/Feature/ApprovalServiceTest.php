@@ -2,6 +2,7 @@
 
 use Mamun724682\DbGovernor\DTOs\PendingQuery;
 use Mamun724682\DbGovernor\Enums\QueryStatus;
+use Mamun724682\DbGovernor\Exceptions\InvalidTransitionException;
 use Mamun724682\DbGovernor\Exceptions\QueryBlockedException;
 use Mamun724682\DbGovernor\Models\GovernedQuery;
 use Mamun724682\DbGovernor\Services\AccessGuard;
@@ -89,6 +90,50 @@ it('submit populates submitted_ip from the current request', function () {
 
     expect($query->submitted_ip)->not->toBeNull();
     expect($query->submitted_ip)->toBe(request()->ip());
+});
+
+// ── Status transition guards ──────────────────────────────────────────────
+
+it('approve throws InvalidTransitionException when query is not pending', function () {
+    $guard = app(AccessGuard::class);
+    $guard->setPayload(['email' => 'admin@test.com', 'role' => 'admin', 'expires_at' => now()->addHour()->toISOString()]);
+
+    $query = GovernedQuery::create([
+        'connection' => 'main', 'sql_raw' => 'UPDATE users SET x=1 WHERE id=1',
+        'query_type' => 'write', 'risk_level' => 'low',
+        'status' => QueryStatus::Executed->value, 'submitted_by' => 'dev@test.com',
+    ]);
+
+    expect(fn () => app(ApprovalService::class)->approve($query->id))
+        ->toThrow(InvalidTransitionException::class);
+});
+
+it('reject throws InvalidTransitionException when query is not pending', function () {
+    $guard = app(AccessGuard::class);
+    $guard->setPayload(['email' => 'admin@test.com', 'role' => 'admin', 'expires_at' => now()->addHour()->toISOString()]);
+
+    $query = GovernedQuery::create([
+        'connection' => 'main', 'sql_raw' => 'UPDATE users SET x=1 WHERE id=1',
+        'query_type' => 'write', 'risk_level' => 'low',
+        'status' => QueryStatus::Approved->value, 'submitted_by' => 'dev@test.com',
+    ]);
+
+    expect(fn () => app(ApprovalService::class)->reject($query->id, 'nope'))
+        ->toThrow(InvalidTransitionException::class);
+});
+
+it('rollback throws InvalidTransitionException when query is not executed', function () {
+    $guard = app(AccessGuard::class);
+    $guard->setPayload(['email' => 'admin@test.com', 'role' => 'admin', 'expires_at' => now()->addHour()->toISOString()]);
+
+    $query = GovernedQuery::create([
+        'connection' => 'main', 'sql_raw' => 'UPDATE users SET x=1 WHERE id=1',
+        'query_type' => 'write', 'risk_level' => 'low',
+        'status' => QueryStatus::Pending->value, 'submitted_by' => 'dev@test.com',
+    ]);
+
+    expect(fn () => app(ApprovalService::class)->rollback($query->id))
+        ->toThrow(InvalidTransitionException::class);
 });
 
 it('reject sets status to rejected with reason', function () {
