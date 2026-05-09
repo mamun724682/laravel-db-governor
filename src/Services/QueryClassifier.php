@@ -48,6 +48,45 @@ class QueryClassifier
     }
 
     /**
+     * Generate a short audit name from a full SQL string.
+     * e.g. "SELECT * FROM users WHERE id=1" → "Read: users (filtered)"
+     */
+    public function generateReadName(string $sql): string
+    {
+        $sql = trim($sql);
+
+        if (preg_match('/\bFROM\s+[`"\[]?(\w+)[`"\]]?/i', $sql, $m)) {
+            $table = $m[1];
+            $hasWhere = (bool) preg_match('/\bWHERE\b/i', $sql);
+
+            return 'Read: '.$table.($hasWhere ? ' (filtered)' : '');
+        }
+
+        $short = mb_substr($sql, 0, 60);
+
+        return mb_strlen($sql) > 60 ? $short.'…' : $short;
+    }
+
+    /**
+     * Generate a short audit name for a table-browse entry.
+     *
+     * @param  string  $boundWhere  The full WHERE clause with values already interpolated,
+     *                              e.g. "WHERE status = 'active'". Pass an empty string for
+     *                              unfiltered browses.
+     */
+    public function generateBrowseName(string $table, string $boundWhere): string
+    {
+        if ($boundWhere === '') {
+            return "Browse {$table}";
+        }
+
+        $condition = preg_replace('/^WHERE\s+/i', '', $boundWhere) ?? $boundWhere;
+        $label = "Browse {$table} WHERE {$condition}";
+
+        return mb_strlen($label) > 120 ? mb_substr($label, 0, 117).'…' : $label;
+    }
+
+    /**
      * @return array<int, string>
      */
     public function extractTables(string $sql): array

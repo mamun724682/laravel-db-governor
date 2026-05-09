@@ -55,7 +55,7 @@ class SqlController
                 $this->executor->logRead(
                     $connection,
                     $this->classifier->extractTables($sql)[0] ?? null,
-                    $this->nameFromSql($sql),
+                    $this->classifier->generateReadName($sql),
                     $sql,
                     $result->rowsAffected ?? 0,
                     $result->executionTimeMs,
@@ -87,25 +87,4 @@ class SqlController
         ]);
     }
 
-    /**
-     * Generate a short human-readable name from a raw SQL string.
-     * E.g. "SELECT * FROM users WHERE id = 1" → "Read: users"
-     */
-    private function nameFromSql(string $sql): string
-    {
-        $sql = trim($sql);
-        $verb = strtoupper(strtok($sql, " \t\n\r") ?: 'SELECT');
-        $pattern = '/\bFROM\s+[`"\[]?(\w+)[`"\]]?/i';
-
-        if (preg_match($pattern, $sql, $m)) {
-            $table = $m[1];
-            $hasWhere = (bool) preg_match('/\bWHERE\b/i', $sql);
-
-            return "Read: {$table}".($hasWhere ? ' (filtered)' : '');
-        }
-
-        $short = mb_substr($sql, 0, 60);
-
-        return mb_strlen($sql) > 60 ? $short.'…' : $short;
-    }
 }

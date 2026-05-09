@@ -8,6 +8,7 @@ use Illuminate\View\View;
 use Mamun724682\DbGovernor\Drivers\DbInspector;
 use Mamun724682\DbGovernor\Services\AccessGuard;
 use Mamun724682\DbGovernor\Services\ConnectionManager;
+use Mamun724682\DbGovernor\Services\QueryClassifier;
 use Mamun724682\DbGovernor\Services\QueryExecutor;
 
 class TableController
@@ -18,6 +19,7 @@ class TableController
         private readonly ConnectionManager $connectionManager,
         private readonly AccessGuard $guard,
         private readonly QueryExecutor $executor,
+        private readonly QueryClassifier $classifier,
     ) {}
 
     public function show(Request $request, string $connection, string $table): View
@@ -64,12 +66,12 @@ class TableController
 
         // Log filtered browsing as a read entry
         if ($where !== '') {
-            $sqlWithValues = $this->bindValuesIntoSql("SELECT * FROM {$quoted} {$where}", $bindings);
+            $boundWhere = $this->bindValuesIntoSql($where, $bindings);
             $this->executor->logRead(
                 $connection,
                 $table,
-                $this->nameFromFilterSql($table, $where, $bindings),
-                $sqlWithValues,
+                $this->classifier->generateBrowseName($table, $boundWhere),
+                "SELECT * FROM {$quoted} {$boundWhere}",
                 max(0, count($rows) - (count($rows) > $perPage ? 1 : 0)),
             );
         }
@@ -174,22 +176,4 @@ class TableController
         }, $sql) ?? $sql;
     }
 
-    /**
-     * Generate a human-readable name for a filtered table browse log entry.
-     *
-     * @param  array<mixed>  $bindings
-     */
-    private function nameFromFilterSql(string $table, string $where, array $bindings): string
-    {
-        if ($where === '') {
-            return "Browse {$table}";
-        }
-
-        $readable = $this->bindValuesIntoSql($where, $bindings);
-        $readable = preg_replace('/^WHERE\s+/i', '', $readable) ?? $readable;
-
-        $label = "Browse {$table} WHERE ".$readable;
-
-        return mb_strlen($label) > 120 ? mb_substr($label, 0, 117).'…' : $label;
-    }
 }
