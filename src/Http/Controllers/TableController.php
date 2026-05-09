@@ -4,7 +4,6 @@ namespace Mamun724682\DbGovernor\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 use Mamun724682\DbGovernor\Drivers\DbInspector;
 use Mamun724682\DbGovernor\Services\AccessGuard;
@@ -31,13 +30,7 @@ class TableController
 
         $conn = $this->connectionManager->resolve($connection);
         $inspector = $this->connectionManager->inspector($connection);
-
-        $ttl = config('db-governor.schema_cache_ttl', 300);
-        $columns = Cache::remember(
-            "db-governor.columns.{$connection}.{$table}",
-            $ttl,
-            fn () => $inspector->listColumns($table, $conn)
-        );
+        $columns = $this->connectionManager->listColumns($connection, $table);
 
         $quoted = $inspector->quoteIdentifier($table);
         $tables = $this->connectionManager->listTables($connection);

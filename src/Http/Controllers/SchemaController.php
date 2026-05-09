@@ -4,7 +4,6 @@ namespace Mamun724682\DbGovernor\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Mamun724682\DbGovernor\Services\ConnectionManager;
 
 class SchemaController
@@ -40,15 +39,7 @@ class SchemaController
             abort(404);
         }
 
-        $ttl = config('db-governor.schema_cache_ttl', 300);
-        $cacheKey = "db-governor.columns.{$connection}.{$table}";
-
-        $columns = Cache::remember($cacheKey, $ttl, function () use ($connection, $table): array {
-            $conn = $this->connectionManager->resolve($connection);
-            $inspector = $this->connectionManager->inspector($connection);
-
-            return $inspector->listColumns($table, $conn);
-        });
+        $columns = $this->connectionManager->listColumns($connection, $table);
 
         return response()->json(['columns' => $columns]);
     }

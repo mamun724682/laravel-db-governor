@@ -88,6 +88,20 @@ class ConnectionManager
     }
 
     /**
+     * List columns for a table on a connection, cached for schema_cache_ttl seconds.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function listColumns(string $key, string $table): array
+    {
+        $ttl = config('db-governor.schema_cache_ttl', 300);
+
+        return Cache::remember("db-governor.columns.{$key}.{$table}", $ttl, function () use ($key, $table): array {
+            return $this->inspector($key)->listColumns($table, $this->resolve($key));
+        });
+    }
+
+    /**
      * Detect child tables that have ON DELETE CASCADE foreign keys pointing to the given target table.
      * Results are cached using the schema_cache_ttl config.
      *
