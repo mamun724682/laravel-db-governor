@@ -205,7 +205,6 @@ DB_GOVERNOR_PATH=db-governor          # URL prefix
 DB_GOVERNOR_TOKEN_EXPIRY=8            # session hours
 DB_GOVERNOR_MAX_ROWS=1000             # high-risk row threshold
 DB_GOVERNOR_DRY_RUN=true              # enable row estimation
-DB_GOVERNOR_ROLLBACK=row_snapshot     # row_snapshot | generated_sql | none
 DB_GOVERNOR_SNAPSHOT_MAX=500          # max rows to snapshot
 DB_GOVERNOR_SCHEMA_CACHE_TTL=300      # schema cache in seconds (0 = off)
 DB_GOVERNOR_LOG_READS=true            # log SELECT queries for audit
@@ -268,10 +267,12 @@ Each connection gets its own URL: `/db-governor/prod`, `/db-governor/staging`, e
 
 ## Security
 
-- Sessions use random 32-character tokens stored in the **cache** (not cookies or session table)
+- Login issues a random 32-character token; the token string is stored in the Laravel session, the payload (email, role, expiry) is stored in the **cache** — no auth table or users table required
 - Token expiry is configurable; tokens are invalidated immediately on logout
 - Role is re-checked on every request — revoking access in config takes immediate effect without re-login
+- Login is rate-limited to **5 attempts per minute per IP**; the counter clears on successful login
 - All write query execution is gated behind the approval workflow
+- Blocked patterns are matched **after stripping SQL comments** to prevent `/* bypass */` evasion
 - Hidden tables are enforced both in the UI and at the query execution layer
 
 ---
@@ -294,14 +295,6 @@ composer lint
 # Fix code style
 composer lint:fix
 ```
-
-[//]: # (---)
-
-[//]: # ()
-[//]: # (## Changelog)
-
-[//]: # ()
-[//]: # (See [CHANGELOG.md]&#40;CHANGELOG.md&#41; for recent changes.)
 
 ---
 
