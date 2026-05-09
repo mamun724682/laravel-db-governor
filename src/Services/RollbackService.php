@@ -82,7 +82,7 @@ class RollbackService
         }
 
         try {
-            $rows = json_decode($query->snapshot_data, true) ?? [];
+            $rows = $query->snapshot_data ?? [];
             $conn = $this->connectionManager->resolve($query->connection);
             $inspector = $this->connectionManager->inspector($query->connection);
             $table = $query->query_table;

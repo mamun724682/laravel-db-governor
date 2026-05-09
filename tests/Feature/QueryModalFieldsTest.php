@@ -40,7 +40,7 @@ it('queries page embeds snapshot fields in modal data', function () {
         'executed_by' => 'admin@test.com', 'executed_at' => now(),
         'query_table' => 'users', 'snapshot_primary_key' => 'id',
         'snapshot_strategy' => 'row_snapshot', 'snapshot_size_bytes' => 1024,
-        'snapshot_data' => json_encode([['id' => 1]]),
+        'snapshot_data' => [['id' => 1]],
     ]);
 
     $html = $this->get(route('db-governor.queries', [
@@ -59,7 +59,7 @@ it('rollback button is rendered for executed query with snapshot', function () {
         'query_type' => 'write', 'risk_level' => 'low',
         'status' => QueryStatus::Executed->value, 'submitted_by' => 'dev@test.com',
         'executed_by' => 'admin@test.com', 'executed_at' => now(),
-        'snapshot_data' => json_encode([['id' => 1]]),
+        'snapshot_data' => [['id' => 1]],
     ]);
 
     $html = $this->get(route('db-governor.queries', [

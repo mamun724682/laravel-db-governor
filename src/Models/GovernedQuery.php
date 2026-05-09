@@ -14,7 +14,6 @@ class GovernedQuery extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'id',
         'connection',
         'query_table',
         'created_at',
@@ -49,9 +48,10 @@ class GovernedQuery extends Model
     ];
 
     protected $casts = [
-        'risk_flags' => 'array',
-        'reviewed_at' => 'datetime',
-        'executed_at' => 'datetime',
+        'risk_flags'    => 'array',
+        'snapshot_data' => 'array',
+        'reviewed_at'   => 'datetime',
+        'executed_at'   => 'datetime',
         'rolled_back_at' => 'datetime',
     ];
 

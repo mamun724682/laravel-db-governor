@@ -97,7 +97,7 @@ it('rollback re-inserts a single deleted row', function () {
         'risk_level' => 'low',
         'status' => QueryStatus::Executed->value,
         'submitted_by' => 'dev@test.com',
-        'snapshot_data' => json_encode([['id' => 1, 'name' => 'Alice', 'active' => 1]]),
+        'snapshot_data' => [['id' => 1, 'name' => 'Alice', 'active' => 1]],
         'query_table' => 'del_users',
         'snapshot_primary_key' => 'id',
     ]);
@@ -124,10 +124,10 @@ it('rollback re-inserts multiple deleted rows', function () {
         'risk_level' => 'low',
         'status' => QueryStatus::Executed->value,
         'submitted_by' => 'dev@test.com',
-        'snapshot_data' => json_encode([
+        'snapshot_data' => [
             ['id' => 1, 'name' => 'Alice', 'active' => 1],
             ['id' => 2, 'name' => 'Bob',   'active' => 1],
-        ]),
+        ],
         'query_table' => 'del_users',
         'snapshot_primary_key' => 'id',
     ]);
@@ -149,7 +149,7 @@ it('rollback marks query status as rolled_back after re-insert', function () {
         'risk_level' => 'low',
         'status' => QueryStatus::Executed->value,
         'submitted_by' => 'dev@test.com',
-        'snapshot_data' => json_encode([['id' => 1, 'name' => 'Alice', 'active' => 1]]),
+        'snapshot_data' => [['id' => 1, 'name' => 'Alice', 'active' => 1]],
         'query_table' => 'del_users',
         'snapshot_primary_key' => 'id',
     ]);
@@ -170,7 +170,7 @@ it('rollback returns failure when attempting to rollback a DELETE twice', functi
         'risk_level' => 'low',
         'status' => QueryStatus::RolledBack->value,
         'submitted_by' => 'dev@test.com',
-        'snapshot_data' => json_encode([['id' => 1, 'name' => 'Alice', 'active' => 1]]),
+        'snapshot_data' => [['id' => 1, 'name' => 'Alice', 'active' => 1]],
         'query_table' => 'del_users',
         'snapshot_primary_key' => 'id',
         'rolled_back_at' => now(),

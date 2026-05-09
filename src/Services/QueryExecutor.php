@@ -88,7 +88,7 @@ class QueryExecutor
                 'rows_affected' => $rowsAffected,
                 'execution_time_ms' => $ms,
                 'snapshot_strategy' => $snapshot?->strategy,
-                'snapshot_data' => $snapshot ? json_encode($snapshot->rows) : null,
+                'snapshot_data' => $snapshot?->rows,
                 'snapshot_primary_key' => $snapshot?->primaryKey,
                 'snapshot_size_bytes' => $snapshot ? strlen(json_encode($snapshot->rows) ?: '') : null,
             ];
