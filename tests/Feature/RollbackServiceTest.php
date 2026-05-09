@@ -5,6 +5,7 @@ use Mamun724682\DbGovernor\DTOs\SnapshotData;
 use Mamun724682\DbGovernor\Enums\QueryStatus;
 use Mamun724682\DbGovernor\Models\GovernedQuery;
 use Mamun724682\DbGovernor\Services\AccessGuard;
+use Mamun724682\DbGovernor\Services\QueryExecutor;
 use Mamun724682\DbGovernor\Services\RollbackService;
 
 beforeEach(function () {
@@ -110,4 +111,35 @@ it('rollback restores rows and updates status to rolled_back', function () {
 
     $query->refresh();
     expect($query->status)->toBe(QueryStatus::RolledBack->value);
+});
+
+// ── end-to-end via QueryExecutor ──────────────────────────────────────────
+
+it('executeWrite captures snapshot for UPDATE and rollback restores original values', function () {
+    $query = GovernedQuery::create([
+        'connection' => 'main',
+        'sql_raw' => 'UPDATE rb_users SET active = 0 WHERE id = 1',
+        'query_type' => 'write',
+        'risk_level' => 'low',
+        'status' => QueryStatus::Approved->value,
+        'submitted_by' => 'dev@test.com',
+    ]);
+
+    $executeResult = app(QueryExecutor::class)->executeWrite($query);
+    expect($executeResult->success)->toBeTrue();
+
+    $query->refresh();
+    expect($query->snapshot_data)->not->toBeNull();
+    expect($query->snapshot_data[0]['active'])->toBe(1); // original value captured
+    expect(DB::connection('sqlite')->table('rb_users')->where('id', 1)->value('active'))->toBe(0);
+
+    $rollbackResult = app(RollbackService::class)->rollback($query);
+    expect($rollbackResult->success)->toBeTrue();
+    expect($rollbackResult->rowsRestored)->toBe(1);
+
+    expect(DB::connection('sqlite')->table('rb_users')->where('id', 1)->value('active'))->toBe(1);
+
+    $query->refresh();
+    expect($query->status)->toBe(QueryStatus::RolledBack->value);
+    expect($query->rollback_sql)->toContain('UPDATE');
 });

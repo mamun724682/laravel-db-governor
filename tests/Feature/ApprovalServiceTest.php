@@ -178,6 +178,32 @@ it('submit accepts UPDATE with a subquery in WHERE without executing the subquer
     expect($query->status)->toBe(QueryStatus::Pending->value);
 });
 
+// ── comment-bypass protection ─────────────────────────────────────────────
+
+it('submit blocks SQL with DROP TABLE hidden behind a block comment', function () {
+    // "/* bypass */ DROP TABLE users" should still be caught by /^\s*DROP.../i
+    // after comments are stripped.
+    $service = app(ApprovalService::class);
+    $dto = new PendingQuery(
+        sql: '/* bypass */ DROP TABLE users',
+        connection: 'main',
+        name: 'Comment bypass test',
+    );
+
+    expect(fn () => $service->submit($dto))->toThrow(QueryBlockedException::class);
+});
+
+it('submit blocks SQL with DROP TABLE hidden behind a line comment', function () {
+    $service = app(ApprovalService::class);
+    $dto = new PendingQuery(
+        sql: "-- bypass\nDROP TABLE users",
+        connection: 'main',
+        name: 'Line comment bypass test',
+    );
+
+    expect(fn () => $service->submit($dto))->toThrow(QueryBlockedException::class);
+});
+
 it('submit skips pre-check and accepts UPDATE with WHERE when dry_run is disabled', function () {
     config(['db-governor.dry_run_enabled' => false]);
 
