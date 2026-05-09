@@ -7,12 +7,9 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 use Mamun724682\DbGovernor\Drivers\DbInspector;
-use Mamun724682\DbGovernor\Enums\QueryStatus;
-use Mamun724682\DbGovernor\Enums\QueryType;
-use Mamun724682\DbGovernor\Enums\RiskLevel;
-use Mamun724682\DbGovernor\Models\GovernedQuery;
 use Mamun724682\DbGovernor\Services\AccessGuard;
 use Mamun724682\DbGovernor\Services\ConnectionManager;
+use Mamun724682\DbGovernor\Services\QueryExecutor;
 
 class TableController
 {
@@ -21,6 +18,7 @@ class TableController
     public function __construct(
         private readonly ConnectionManager $connectionManager,
         private readonly AccessGuard $guard,
+        private readonly QueryExecutor $executor,
     ) {}
 
     public function show(Request $request, string $connection, string $table): View
@@ -72,21 +70,15 @@ class TableController
         );
 
         // Log filtered browsing as a read entry
-        if ($where !== '' && config('db-governor.log_read_queries', true)) {
+        if ($where !== '') {
             $sqlWithValues = $this->bindValuesIntoSql("SELECT * FROM {$quoted} {$where}", $bindings);
-            GovernedQuery::create([
-                'connection' => $connection,
-                'query_table' => $table,
-                'name' => $this->nameFromFilterSql($table, $where, $bindings),
-                'sql_raw' => $sqlWithValues,
-                'query_type' => QueryType::Read->value,
-                'status' => QueryStatus::Executed->value,
-                'risk_level' => RiskLevel::Low->value,
-                'submitted_by' => $this->guard->email(),
-                'executed_by' => $this->guard->email(),
-                'executed_at' => now(),
-                'rows_affected' => max(0, count($rows) - (count($rows) > $perPage ? 1 : 0)),
-            ]);
+            $this->executor->logRead(
+                $connection,
+                $table,
+                $this->nameFromFilterSql($table, $where, $bindings),
+                $sqlWithValues,
+                max(0, count($rows) - (count($rows) > $perPage ? 1 : 0)),
+            );
         }
 
         // Paginator slices to $perPage and sets hasMore = count > $perPage internally.

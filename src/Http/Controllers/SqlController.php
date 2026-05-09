@@ -4,10 +4,7 @@ namespace Mamun724682\DbGovernor\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Mamun724682\DbGovernor\Enums\QueryStatus;
 use Mamun724682\DbGovernor\Enums\QueryType;
-use Mamun724682\DbGovernor\Enums\RiskLevel;
-use Mamun724682\DbGovernor\Models\GovernedQuery;
 use Mamun724682\DbGovernor\Services\AccessGuard;
 use Mamun724682\DbGovernor\Services\ConnectionManager;
 use Mamun724682\DbGovernor\Services\QueryClassifier;
@@ -54,21 +51,15 @@ class SqlController
         if ($type === QueryType::Read) {
             $result = $this->executor->executeRead($sql, $connection);
 
-            if ($result->success && config('db-governor.log_read_queries', true)) {
-                GovernedQuery::create([
-                    'connection' => $connection,
-                    'query_table' => $this->classifier->extractTables($sql)[0] ?? null,
-                    'name' => $this->nameFromSql($sql),
-                    'sql_raw' => $sql,
-                    'query_type' => QueryType::Read->value,
-                    'status' => QueryStatus::Executed->value,
-                    'risk_level' => RiskLevel::Low->value,
-                    'submitted_by' => $this->guard->email(),
-                    'executed_by' => $this->guard->email(),
-                    'executed_at' => now(),
-                    'rows_affected' => $result->rowsAffected,
-                    'execution_time_ms' => $result->executionTimeMs,
-                ]);
+            if ($result->success) {
+                $this->executor->logRead(
+                    $connection,
+                    $this->classifier->extractTables($sql)[0] ?? null,
+                    $this->nameFromSql($sql),
+                    $sql,
+                    $result->rowsAffected ?? 0,
+                    $result->executionTimeMs,
+                );
             }
 
             return response()->json([

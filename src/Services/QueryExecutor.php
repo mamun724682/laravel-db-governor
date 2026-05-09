@@ -4,6 +4,8 @@ namespace Mamun724682\DbGovernor\Services;
 
 use Mamun724682\DbGovernor\DTOs\QueryResult;
 use Mamun724682\DbGovernor\Enums\QueryStatus;
+use Mamun724682\DbGovernor\Enums\QueryType;
+use Mamun724682\DbGovernor\Enums\RiskLevel;
 use Mamun724682\DbGovernor\Exceptions\QueryNotApprovedException;
 use Mamun724682\DbGovernor\Models\GovernedQuery;
 
@@ -14,6 +16,34 @@ class QueryExecutor
         private readonly RollbackService $rollbackService,
         private readonly AccessGuard $guard,
     ) {}
+
+    public function logRead(
+        string $connection,
+        ?string $table,
+        string $name,
+        string $sql,
+        int $rowsAffected,
+        ?int $executionTimeMs = null,
+    ): void {
+        if (! config('db-governor.log_read_queries', true)) {
+            return;
+        }
+
+        GovernedQuery::create([
+            'connection'        => $connection,
+            'query_table'       => $table,
+            'name'              => $name,
+            'sql_raw'           => $sql,
+            'query_type'        => QueryType::Read->value,
+            'status'            => QueryStatus::Executed->value,
+            'risk_level'        => RiskLevel::Low->value,
+            'submitted_by'      => $this->guard->email(),
+            'executed_by'       => $this->guard->email(),
+            'executed_at'       => now(),
+            'rows_affected'     => $rowsAffected,
+            'execution_time_ms' => $executionTimeMs,
+        ]);
+    }
 
     public function executeRead(string $sql, string $connectionKey): QueryResult
     {
