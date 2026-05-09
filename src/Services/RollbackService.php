@@ -40,7 +40,7 @@ class RollbackService
 
         try {
             $conn = $this->connectionManager->resolve($connectionKey);
-            $inspector = $this->connectionManager->inspector($connectionKey);
+            $inspector = $this->connectionManager->inspector($conn);
             $primaryKey = $inspector->detectPrimaryKey($table, $conn);
             $maxRows = (int) config('db-governor.snapshot_max_rows', 500);
 
@@ -84,7 +84,7 @@ class RollbackService
         try {
             $rows = $query->snapshot_data ?? [];
             $conn = $this->connectionManager->resolve($query->connection);
-            $inspector = $this->connectionManager->inspector($query->connection);
+            $inspector = $this->connectionManager->inspector($conn);
             $table = $query->query_table;
             $pk = $query->snapshot_primary_key ?? 'id';
             $verb = strtoupper($this->classifier->extractVerb($query->sql_raw));

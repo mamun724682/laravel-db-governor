@@ -85,4 +85,27 @@ class PgsqlInspector implements DbInspector
 
         return null;
     }
+
+    /**
+     * @return array<int, string>
+     */
+    public function detectCascadeChildTables(string $targetTable, Connection $conn): array
+    {
+        $rows = $conn->select(
+            "SELECT DISTINCT tc.table_name
+             FROM information_schema.referential_constraints rc
+             JOIN information_schema.table_constraints tc
+               ON rc.constraint_name        = tc.constraint_name
+              AND rc.constraint_schema      = tc.constraint_schema
+             JOIN information_schema.constraint_column_usage ccu
+               ON rc.unique_constraint_name   = ccu.constraint_name
+              AND rc.unique_constraint_schema = ccu.constraint_schema
+             WHERE rc.delete_rule   = 'CASCADE'
+               AND ccu.table_name   = ?
+               AND rc.constraint_schema = 'public'",
+            [$targetTable]
+        );
+
+        return array_column(array_map(fn ($r) => (array) $r, $rows), 'table_name');
+    }
 }

@@ -14,7 +14,7 @@ class DryRunEngine
 
         try {
             $conn = $this->connectionManager->resolve($connectionKey);
-            $inspector = $this->connectionManager->inspector($connectionKey);
+            $inspector = $this->connectionManager->inspector($conn);
 
             return $inspector->estimateAffectedRows($sql, $conn);
         } catch (\Throwable) {

@@ -21,4 +21,11 @@ interface DbInspector
     public function listColumns(string $table, Connection $conn): array;
 
     public function estimateAffectedRows(string $sql, Connection $conn): ?int;
+
+    /**
+     * Return child table names that have ON DELETE CASCADE FKs pointing to $targetTable.
+     *
+     * @return array<int, string>
+     */
+    public function detectCascadeChildTables(string $targetTable, Connection $conn): array;
 }

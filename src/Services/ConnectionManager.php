@@ -52,14 +52,14 @@ class ConnectionManager
         return $this->resolve($key)->getDriverName();
     }
 
-    public function inspector(string $key): DbInspector
+    public function inspector(Connection $conn): DbInspector
     {
-        return match ($this->driver($key)) {
+        return match ($conn->getDriverName()) {
             'mysql' => new MySqlInspector,
             'pgsql' => new PgsqlInspector,
             'sqlite' => new SqliteInspector,
             default => throw new InvalidConnectionException(
-                "Unsupported database driver for connection key \"{$key}\"."
+                "Unsupported database driver \"{$conn->getDriverName()}\"."
             ),
         };
     }
@@ -76,7 +76,9 @@ class ConnectionManager
         $cacheKey = "db-governor.tables.{$key}";
 
         $tables = Cache::remember($cacheKey, $ttl, function () use ($key): array {
-            return $this->inspector($key)->listTables($this->resolve($key));
+            $conn = $this->resolve($key);
+
+            return $this->inspector($conn)->listTables($conn);
         });
 
         $hidden = config('db-governor.hidden_tables', []);
@@ -97,7 +99,9 @@ class ConnectionManager
         $ttl = config('db-governor.schema_cache_ttl', 300);
 
         return Cache::remember("db-governor.columns.{$key}.{$table}", $ttl, function () use ($key, $table): array {
-            return $this->inspector($key)->listColumns($table, $this->resolve($key));
+            $conn = $this->resolve($key);
+
+            return $this->inspector($conn)->listColumns($table, $conn);
         });
     }
 
@@ -114,31 +118,8 @@ class ConnectionManager
 
         return Cache::remember($cacheKey, $ttl, function () use ($targetTable, $key): array {
             $conn = $this->resolve($key);
-            $allTables = $this->inspector($key)->listTables($conn);
-            $cascadeChildren = [];
 
-            foreach ($allTables as $table) {
-                if ($table === $targetTable) {
-                    continue;
-                }
-
-                try {
-                    $fks = $conn->getSchemaBuilder()->getForeignKeys($table);
-
-                    foreach ($fks as $fk) {
-                        if (($fk['foreign_table'] ?? '') === $targetTable
-                            && strtolower($fk['on_delete'] ?? '') === 'cascade'
-                        ) {
-                            $cascadeChildren[] = $table;
-                            break;
-                        }
-                    }
-                } catch (\Throwable) {
-                    // Skip tables we cannot inspect
-                }
-            }
-
-            return $cascadeChildren;
+            return $this->inspector($conn)->detectCascadeChildTables($targetTable, $conn);
         });
     }
 

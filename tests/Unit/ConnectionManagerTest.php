@@ -40,7 +40,8 @@ it('driver returns the PDO driver name', function () {
 });
 
 it('inspector returns SqliteInspector for sqlite driver', function () {
-    expect($this->manager->inspector('main'))->toBeInstanceOf(SqliteInspector::class);
+    $conn = $this->manager->resolve('main');
+    expect($this->manager->inspector($conn))->toBeInstanceOf(SqliteInspector::class);
 });
 
 it('inspector throws for unsupported driver', function () {

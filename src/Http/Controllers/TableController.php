@@ -31,7 +31,7 @@ class TableController
         }
 
         $conn = $this->connectionManager->resolve($connection);
-        $inspector = $this->connectionManager->inspector($connection);
+        $inspector = $this->connectionManager->inspector($conn);
         $columns = $this->connectionManager->listColumns($connection, $table);
 
         $quoted = $inspector->quoteIdentifier($table);

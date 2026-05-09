@@ -26,8 +26,8 @@ it('delegates to ConnectionManager inspector', function () {
     $inspector = Mockery::mock(SqliteInspector::class);
     $conn = DB::connection('sqlite');
 
-    $manager->shouldReceive('inspector')->with('main')->andReturn($inspector);
     $manager->shouldReceive('resolve')->with('main')->andReturn($conn);
+    $manager->shouldReceive('inspector')->with($conn)->andReturn($inspector);
     $inspector->shouldReceive('estimateAffectedRows')->andReturn(42);
 
     config(['db-governor.dry_run_enabled' => true]);

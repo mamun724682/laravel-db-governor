@@ -58,4 +58,35 @@ class SqliteInspector implements DbInspector
         // Returning null tells callers to skip row-count checks for write queries.
         return null;
     }
+
+    /**
+     * SQLite has no cross-table FK metadata query; iterate via PRAGMA.
+     *
+     * @return array<int, string>
+     */
+    public function detectCascadeChildTables(string $targetTable, Connection $conn): array
+    {
+        $result = [];
+
+        foreach ($this->listTables($conn) as $table) {
+            if ($table === $targetTable) {
+                continue;
+            }
+
+            try {
+                $fks = $conn->select("PRAGMA foreign_key_list(\"{$table}\")");
+
+                foreach ($fks as $fk) {
+                    if ($fk->table === $targetTable && strtolower($fk->on_delete) === 'cascade') {
+                        $result[] = $table;
+                        break;
+                    }
+                }
+            } catch (\Throwable) {
+                // Skip tables we cannot inspect
+            }
+        }
+
+        return $result;
+    }
 }

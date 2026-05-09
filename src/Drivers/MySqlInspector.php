@@ -65,4 +65,24 @@ class MySqlInspector implements DbInspector
             'rows'
         ));
     }
+
+    /**
+     * @return array<int, string>
+     */
+    public function detectCascadeChildTables(string $targetTable, Connection $conn): array
+    {
+        $rows = $conn->select(
+            "SELECT DISTINCT kcu.TABLE_NAME
+             FROM information_schema.REFERENTIAL_CONSTRAINTS rc
+             JOIN information_schema.KEY_COLUMN_USAGE kcu
+               ON rc.CONSTRAINT_NAME    = kcu.CONSTRAINT_NAME
+              AND rc.CONSTRAINT_SCHEMA  = kcu.CONSTRAINT_SCHEMA
+             WHERE rc.DELETE_RULE              = 'CASCADE'
+               AND kcu.REFERENCED_TABLE_NAME   = ?
+               AND rc.CONSTRAINT_SCHEMA        = DATABASE()",
+            [$targetTable]
+        );
+
+        return array_column(array_map(fn ($r) => (array) $r, $rows), 'TABLE_NAME');
+    }
 }
