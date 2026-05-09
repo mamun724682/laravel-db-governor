@@ -63,3 +63,36 @@ it('logout redirects to login even with an already-invalid token', function () {
     $this->post(route('db-governor.logout'))
         ->assertRedirect(route('db-governor.login'));
 });
+
+// ── rate limiting ─────────────────────────────────────────────────────────
+
+it('blocks login after 5 consecutive failed attempts', function () {
+    for ($i = 0; $i < 5; $i++) {
+        $this->post(route('db-governor.login.submit'), ['email' => 'nobody@test.com']);
+    }
+
+    $this->post(route('db-governor.login.submit'), ['email' => 'nobody@test.com'])
+        ->assertRedirect(route('db-governor.login'))
+        ->assertSessionHas('error');
+
+    // The session error on the 6th attempt must mention rate limiting
+    $error = session('error');
+    expect($error)->toContain('Too many');
+});
+
+it('rate limit is cleared on successful login', function () {
+    // Burn 4 attempts
+    for ($i = 0; $i < 4; $i++) {
+        $this->post(route('db-governor.login.submit'), ['email' => 'nobody@test.com']);
+    }
+
+    // Successful login clears the counter
+    $this->post(route('db-governor.login.submit'), ['email' => 'admin@test.com'])
+        ->assertRedirect();
+
+    // Should now allow a failed attempt without being locked (counter reset to 1)
+    $this->post(route('db-governor.login.submit'), ['email' => 'nobody@test.com'])
+        ->assertSessionHas('error');
+
+    expect(session('error'))->not->toContain('Too many');
+});
