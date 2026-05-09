@@ -196,12 +196,11 @@ These are maintenance hazards that grow in scope every time a feature is added.
 
 ---
 
-### 3.1 Extract `extractWhere()` into `QueryClassifier`
+### ~~3.1 Extract `extractWhere()` into `QueryClassifier`~~ ✅ Resolved by Phase 1.1
 
-**Duplicated in:** `ApprovalService.php:137`, `RollbackService.php:48`
-
-Add `QueryClassifier::extractWhere(string $sql): ?string` that encapsulates the regex.
-Both callers use the result, so this is a straight refactor.
+The Phase 1.1 injection fix rewrote `preCheckWhereRows()` to delegate to `DryRunEngine`,
+eliminating its WHERE extraction entirely. The regex now lives only in
+`RollbackService::captureBeforeState()` — no duplication remains.
 
 ---
 

@@ -50,12 +50,11 @@ class RollbackService
             }
 
             $where = trim($m[1]);
-            $q = $conn->getDriverName() === 'mysql' ? '`' : '"';
             // Note: $where is extracted from $sql which is an admin-approved, stored query.
             // It has been reviewed before execution, so the risk profile here is lower
             // than raw user input. Parameterizing an arbitrary WHERE clause is not possible
             // in standard SQL; no further mitigation is applied.
-            $rows = $conn->select("SELECT * FROM {$q}{$table}{$q} WHERE {$where}");
+            $rows = $conn->select('SELECT * FROM '.$inspector->quoteIdentifier($table).' WHERE '.$where);
 
             if (empty($rows) || count($rows) > $maxRows) {
                 return null;
@@ -85,29 +84,30 @@ class RollbackService
         try {
             $rows = json_decode($query->snapshot_data, true) ?? [];
             $conn = $this->connectionManager->resolve($query->connection);
+            $inspector = $this->connectionManager->inspector($query->connection);
             $table = $query->query_table;
             $pk = $query->snapshot_primary_key ?? 'id';
-            $q = $conn->getDriverName() === 'mysql' ? '`' : '"';
             $verb = strtoupper($this->classifier->extractVerb($query->sql_raw));
             $count = 0;
             $rollbackSqlParts = [];
 
-            $conn->transaction(function () use ($conn, $table, $pk, $rows, $q, $verb, &$count, &$rollbackSqlParts) {
+            $conn->transaction(function () use ($conn, $inspector, $table, $pk, $rows, $verb, &$count, &$rollbackSqlParts) {
                 foreach ($rows as $row) {
                     if ($verb === 'DELETE') {
                         // Re-insert deleted rows
                         $cols = array_keys($row);
-                        $colList = implode(', ', array_map(fn ($c) => "{$q}{$c}{$q}", $cols));
+                        $colList = implode(', ', array_map(fn ($c) => $inspector->quoteIdentifier($c), $cols));
                         $placeholders = implode(', ', array_fill(0, count($cols), '?'));
                         $bindings = array_values($row);
+                        $qt = $inspector->quoteIdentifier($table);
 
                         $conn->statement(
-                            "INSERT INTO {$q}{$table}{$q} ({$colList}) VALUES ({$placeholders})",
+                            "INSERT INTO {$qt} ({$colList}) VALUES ({$placeholders})",
                             $bindings
                         );
 
                         $vals = implode(', ', array_map(fn ($v) => is_null($v) ? 'NULL' : (is_numeric($v) ? $v : "'".addslashes((string) $v)."'"), $bindings));
-                        $rollbackSqlParts[] = "INSERT INTO {$q}{$table}{$q} ({$colList}) VALUES ({$vals})";
+                        $rollbackSqlParts[] = "INSERT INTO {$qt} ({$colList}) VALUES ({$vals})";
                     } else {
                         // Restore updated rows
                         $pkValue = $row[$pk];
@@ -118,7 +118,7 @@ class RollbackService
                             if ($col === $pk) {
                                 continue;
                             }
-                            $setClauses[] = "{$q}{$col}{$q} = ?";
+                            $setClauses[] = $inspector->quoteIdentifier($col).' = ?';
                             $bindings[] = $value;
                         }
 
@@ -126,9 +126,11 @@ class RollbackService
                             continue;
                         }
 
+                        $qt = $inspector->quoteIdentifier($table);
+                        $qpk = $inspector->quoteIdentifier($pk);
                         $bindings[] = $pkValue;
                         $conn->update(
-                            "UPDATE {$q}{$table}{$q} SET ".implode(', ', $setClauses)." WHERE {$q}{$pk}{$q} = ?",
+                            "UPDATE {$qt} SET ".implode(', ', $setClauses)." WHERE {$qpk} = ?",
                             $bindings
                         );
 
@@ -138,10 +140,10 @@ class RollbackService
                                 continue;
                             }
                             $val = is_null($value) ? 'NULL' : (is_numeric($value) ? $value : "'".addslashes((string) $value)."'");
-                            $setParts[] = "{$q}{$col}{$q} = {$val}";
+                            $setParts[] = $inspector->quoteIdentifier($col)." = {$val}";
                         }
                         $pkValFormatted = is_numeric($pkValue) ? $pkValue : "'".addslashes((string) $pkValue)."'";
-                        $rollbackSqlParts[] = "UPDATE {$q}{$table}{$q} SET ".implode(', ', $setParts)." WHERE {$q}{$pk}{$q} = {$pkValFormatted}";
+                        $rollbackSqlParts[] = "UPDATE {$qt} SET ".implode(', ', $setParts)." WHERE {$qpk} = {$pkValFormatted}";
                     }
 
                     $count++;
