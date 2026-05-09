@@ -39,9 +39,12 @@ it('listColumns returns column names and types', function () {
     expect(array_column($cols, 'name'))->toContain('id')->toContain('name')->toContain('email');
 });
 
-it('estimateAffectedRows returns count via WHERE clause', function () {
+it('estimateAffectedRows always returns null (SQLite has no DML EXPLAIN)', function () {
+    // SQLite does not support EXPLAIN for DML row estimation; the old WHERE-injection
+    // approach was an injection vector. SQLite is dev/test only — callers skip
+    // row-count checks when null is returned.
     $sql = "UPDATE test_users SET name = 'X' WHERE email = 'a@test.com'";
-    expect($this->inspector->estimateAffectedRows($sql, $this->conn))->toBe(1);
+    expect($this->inspector->estimateAffectedRows($sql, $this->conn))->toBeNull();
 });
 
 it('estimateAffectedRows returns null when no WHERE clause', function () {

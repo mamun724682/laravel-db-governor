@@ -51,6 +51,10 @@ class RollbackService
 
             $where = trim($m[1]);
             $q = $conn->getDriverName() === 'mysql' ? '`' : '"';
+            // Note: $where is extracted from $sql which is an admin-approved, stored query.
+            // It has been reviewed before execution, so the risk profile here is lower
+            // than raw user input. Parameterizing an arbitrary WHERE clause is not possible
+            // in standard SQL; no further mitigation is applied.
             $rows = $conn->select("SELECT * FROM {$q}{$table}{$q} WHERE {$where}");
 
             if (empty($rows) || count($rows) > $maxRows) {

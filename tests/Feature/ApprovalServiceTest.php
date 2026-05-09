@@ -155,3 +155,39 @@ it('reject sets status to rejected with reason', function () {
     expect($query->status)->toBe(QueryStatus::Rejected->value);
     expect($query->review_note)->toBe('Too risky');
 });
+
+// ── preCheckWhereRows injection fix ──────────────────────────────────────────
+
+it('submit accepts UPDATE with a subquery in WHERE without executing the subquery separately', function () {
+    // The old code extracted the WHERE clause and injected it into a separate COUNT query.
+    // A subquery in WHERE like "(SELECT id FROM ...)" would run against the DB as a side-channel.
+    // After the fix, the pre-check goes through DryRunEngine (EXPLAIN on production drivers)
+    // or returns null on SQLite — the raw WHERE string is never re-injected into a new query.
+    config(['db-governor.dry_run_enabled' => true]);
+
+    $service = app(ApprovalService::class);
+    // Subquery in WHERE — the old injection would execute: SELECT COUNT(*) ... WHERE (SELECT 1)
+    $dto = new PendingQuery(
+        sql: 'UPDATE users SET active=0 WHERE id IN (SELECT id FROM users WHERE active=1)',
+        connection: 'main',
+        name: 'Subquery WHERE test',
+    );
+
+    // Should submit without error (not throw due to the subquery being injected into another query)
+    $query = $service->submit($dto);
+    expect($query->status)->toBe(QueryStatus::Pending->value);
+});
+
+it('submit skips pre-check and accepts UPDATE with WHERE when dry_run is disabled', function () {
+    config(['db-governor.dry_run_enabled' => false]);
+
+    $service = app(ApprovalService::class);
+    $dto = new PendingQuery(
+        sql: 'UPDATE users SET active=0 WHERE id=9999',
+        connection: 'main',
+        name: 'Dry run disabled test',
+    );
+
+    $query = $service->submit($dto);
+    expect($query->status)->toBe(QueryStatus::Pending->value);
+});

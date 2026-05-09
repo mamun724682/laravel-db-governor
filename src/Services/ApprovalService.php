@@ -19,6 +19,7 @@ class ApprovalService
         private readonly RollbackService $rollbackService,
         private readonly AccessGuard $guard,
         private readonly ConnectionManager $connectionManager,
+        private readonly DryRunEngine $dryRunEngine,
     ) {}
 
     public function submit(PendingQuery $dto): GovernedQuery
@@ -127,6 +128,9 @@ class ApprovalService
 
     /**
      * For UPDATE/DELETE with a WHERE clause, verify at least one row would be affected.
+     * Uses DryRunEngine (EXPLAIN on MySQL/PostgreSQL) — the WHERE clause is never
+     * re-injected into a separate query.
+     *
      * Returns an error message string if validation fails, null otherwise.
      */
     private function preCheckWhereRows(string $sql, string $connectionKey): ?string
@@ -141,37 +145,13 @@ class ApprovalService
             return null;
         }
 
-        if ($verb === 'UPDATE') {
-            if (! preg_match('/UPDATE\s+[`"]?(\w+)[`"]?\s+SET/i', $sql, $m)) {
-                return null;
-            }
-        } else {
-            if (! preg_match('/DELETE\s+FROM\s+[`"]?(\w+)[`"]?/i', $sql, $m)) {
-                return null;
-            }
-        }
+        $estimated = $this->dryRunEngine->estimate($sql, $connectionKey);
 
-        $table = $m[1];
+        if ($estimated === 0) {
+            $table = $this->classifier->extractTables($sql)[0] ?? 'unknown';
 
-        if (! preg_match('/\bWHERE\b(.+?)(?:\b(?:ORDER\s+BY|LIMIT|GROUP\s+BY|HAVING)\b|$)/is', $sql, $wm)) {
-            return null;
-        }
-
-        $where = trim($wm[1]);
-
-        try {
-            $conn = $this->connectionManager->resolve($connectionKey);
-            $q = $conn->getDriverName() === 'mysql' ? '`' : '"';
-            $row = $conn->selectOne("SELECT COUNT(*) as cnt FROM {$q}{$table}{$q} WHERE {$where}");
-            $count = (int) ($row->cnt ?? $row->CNT ?? 0);
-
-            if ($count === 0) {
-                return "Query rejected: no rows match the WHERE condition in table \"{$table}\". "
-                    .'Verify your filter values and resubmit.';
-            }
-        } catch (\Throwable) {
-            // Complex sub-queries or syntax issues — let risk analysis handle it
-            return null;
+            return "Query rejected: no rows match the WHERE condition in table \"{$table}\". "
+                .'Verify your filter values and resubmit.';
         }
 
         return null;

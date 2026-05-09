@@ -54,30 +54,8 @@ class SqliteInspector implements DbInspector
 
     public function estimateAffectedRows(string $sql, Connection $conn): ?int
     {
-        $trimmed = trim($sql);
-
-        if (! preg_match('/\bWHERE\b/i', $trimmed)) {
-            return null;
-        }
-
-        // UPDATE table SET ... WHERE condition
-        if (preg_match('/^\s*UPDATE\s+(\w+)\s+SET\s+.+?\s+WHERE\s+(.+)$/is', $trimmed, $m)) {
-            $result = $conn->selectOne(
-                "SELECT COUNT(*) as cnt FROM \"{$m[1]}\" WHERE {$m[2]}"
-            );
-
-            return (int) $result->cnt;
-        }
-
-        // DELETE FROM table WHERE condition
-        if (preg_match('/^\s*DELETE\s+FROM\s+(\w+)\s+WHERE\s+(.+)$/is', $trimmed, $m)) {
-            $result = $conn->selectOne(
-                "SELECT COUNT(*) as cnt FROM \"{$m[1]}\" WHERE {$m[2]}"
-            );
-
-            return (int) $result->cnt;
-        }
-
+        // SQLite has no EXPLAIN equivalent for DML row estimation.
+        // Returning null tells callers to skip row-count checks for write queries.
         return null;
     }
 }
