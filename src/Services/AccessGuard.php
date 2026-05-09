@@ -45,16 +45,15 @@ class AccessGuard
         }
 
         $email = strtolower($data['email']);
+        $admins = $this->adminEmails();
+        $employees = $this->employeeEmails();
 
-        if (
-            ! in_array($email, $this->adminEmails(), strict: true)
-            && ! in_array($email, $this->employeeEmails(), strict: true)
-        ) {
+        if (! in_array($email, $admins, strict: true) && ! in_array($email, $employees, strict: true)) {
             throw new \RuntimeException('Email is no longer authorized.');
         }
 
         // Re-derive role in case the email was promoted/demoted since login
-        $role = in_array($email, $this->adminEmails(), strict: true) ? 'admin' : 'employee';
+        $role = in_array($email, $admins, strict: true) ? 'admin' : 'employee';
 
         return array_merge($data, ['email' => $email, 'role' => $role]);
     }
