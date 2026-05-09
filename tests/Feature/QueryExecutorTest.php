@@ -12,7 +12,6 @@ beforeEach(function () {
     config([
         'db-governor.connections' => ['main' => 'sqlite'],
         'db-governor.allowed.admins' => ['admin@test.com'],
-        'db-governor.rollback_strategy' => 'row_snapshot',
         'db-governor.snapshot_max_rows' => 500,
         'db-governor.governance_connection' => null,
     ]);

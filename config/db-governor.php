@@ -46,8 +46,6 @@ return [
     // Set to 0 to disable caching.
     'schema_cache_ttl' => env('DB_GOVERNOR_SCHEMA_CACHE_TTL', 300),
 
-    // 'row_snapshot' | 'generated_sql' | 'none'
-    'rollback_strategy' => env('DB_GOVERNOR_ROLLBACK', 'row_snapshot'),
     'snapshot_max_rows' => env('DB_GOVERNOR_SNAPSHOT_MAX', 500),
 
     // Separate connection for the governance table itself (null = app default).
