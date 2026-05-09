@@ -47,6 +47,7 @@ class ApprovalService
             'risk_flags' => $risk->flags,
             'estimated_rows' => $risk->estimatedRows,
             'submitted_by' => $this->guard->email(),
+            'submitted_ip' => request()->ip(),
         ];
 
         if ($risk->blocked) {

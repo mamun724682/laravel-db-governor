@@ -81,6 +81,16 @@ it('approve throws 403 for non-admin', function () {
         ->toThrow(HttpException::class);
 });
 
+it('submit populates submitted_ip from the current request', function () {
+    $service = app(ApprovalService::class);
+    $dto = new PendingQuery(sql: 'UPDATE users SET active=0 WHERE id=1', connection: 'main', name: 'IP test');
+
+    $query = $service->submit($dto);
+
+    expect($query->submitted_ip)->not->toBeNull();
+    expect($query->submitted_ip)->toBe(request()->ip());
+});
+
 it('reject sets status to rejected with reason', function () {
     $guard = app(AccessGuard::class);
     $guard->setPayload(['email' => 'admin@test.com', 'role' => 'admin', 'expires_at' => now()->addHour()->toISOString()]);
