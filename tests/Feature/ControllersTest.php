@@ -61,6 +61,29 @@ it('queries action approve updates status', function () {
     expect($query->status)->toBe(QueryStatus::Approved->value);
 });
 
+it('queries action does not reach the controller for an unrecognised action', function () {
+    $query = GovernedQuery::create([
+        'connection' => 'main',
+        'sql_raw' => 'UPDATE users SET x=1 WHERE id=1',
+        'query_type' => 'write',
+        'risk_level' => 'low',
+        'status' => QueryStatus::Pending->value,
+        'submitted_by' => 'dev@test.com',
+    ]);
+
+    // The route constraint (approve|reject|execute|rollback) rejects the request
+    // before the controller is reached; the catch-all redirects to login.
+    $this->post(route('db-governor.queries.action', [
+        'connection' => 'main',
+        'query' => $query->id,
+        'action' => 'delete_everything',
+    ]))->assertRedirect();
+
+    // Controller was never reached — query status must be unchanged.
+    $query->refresh();
+    expect($query->status)->toBe(QueryStatus::Pending->value);
+});
+
 it('sql execute returns JSON rows for SELECT', function () {
     $this->post(route('db-governor.sql.execute', ['connection' => 'main']), [
         'sql' => 'SELECT 1 as value',

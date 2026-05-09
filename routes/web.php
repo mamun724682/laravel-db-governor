@@ -49,6 +49,7 @@ Route::prefix($prefix)
                     ->name('db-governor.queries.store');
 
                 Route::post('/queries/{query}/{action}', [QueryController::class, 'action'])
+                    ->where('action', 'approve|reject|execute|rollback')
                     ->name('db-governor.queries.action');
 
                 Route::post('/sql', [SqlController::class, 'execute'])
