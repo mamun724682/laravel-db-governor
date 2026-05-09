@@ -8,6 +8,22 @@ beforeEach(function () {
     ]);
 });
 
+it('dashboard stats are loaded with a single GROUP BY query, not six COUNT queries', function () {
+    $token = $this->loginAsGuard('admin@test.com');
+
+    $queryCount = 0;
+    \Illuminate\Support\Facades\DB::listen(function ($query) use (&$queryCount) {
+        if (stripos($query->sql, 'count') !== false) {
+            $queryCount++;
+        }
+    });
+
+    $this->get(route('db-governor.dashboard', ['connection' => 'main']))->assertOk();
+
+    // One GROUP BY query replaces six individual COUNT(*) queries.
+    expect($queryCount)->toBe(1);
+});
+
 it('dashboard shows stats cards', function () {
     $token = $this->loginAsGuard('admin@test.com');
 

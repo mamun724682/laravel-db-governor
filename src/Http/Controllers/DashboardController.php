@@ -18,16 +18,19 @@ class DashboardController
 
     public function index(Request $request, string $connection): View
     {
-        $baseQuery = fn () => GovernedQuery::where('connection', $connection)
-            ->when(! $this->guard->isAdmin(), fn ($q) => $q->where('submitted_by', $this->guard->email()));
+        $counts = GovernedQuery::where('connection', $connection)
+            ->when(! $this->guard->isAdmin(), fn ($q) => $q->where('submitted_by', $this->guard->email()))
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
 
         $stats = [
-            'pending'     => (clone $baseQuery())->where('status', QueryStatus::Pending->value)->count(),
-            'approved'    => (clone $baseQuery())->where('status', QueryStatus::Approved->value)->count(),
-            'executed'    => (clone $baseQuery())->where('status', QueryStatus::Executed->value)->count(),
-            'rejected'    => (clone $baseQuery())->where('status', QueryStatus::Rejected->value)->count(),
-            'rolled_back' => (clone $baseQuery())->where('status', QueryStatus::RolledBack->value)->count(),
-            'blocked'     => (clone $baseQuery())->where('status', QueryStatus::Blocked->value)->count(),
+            'pending'     => $counts[QueryStatus::Pending->value]     ?? 0,
+            'approved'    => $counts[QueryStatus::Approved->value]    ?? 0,
+            'executed'    => $counts[QueryStatus::Executed->value]    ?? 0,
+            'rejected'    => $counts[QueryStatus::Rejected->value]    ?? 0,
+            'rolled_back' => $counts[QueryStatus::RolledBack->value]  ?? 0,
+            'blocked'     => $counts[QueryStatus::Blocked->value]     ?? 0,
         ];
 
         $tables = $this->connectionManager->listTables($connection);
